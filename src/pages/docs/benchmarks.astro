@@ -1,0 +1,84 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import BenchmarkVisualizer from '../../components/BenchmarkVisualizer.astro';
+import { COMPOSITION_BENCHMARK_ROWS } from '../../data/horos';
+
+const headings = [
+  { id: 'methodology', label: 'Evaluation Scope' },
+  { id: 'results', label: 'Tables & Empirical Figures' },
+  { id: 'composition', label: 'Composition Tradeoffs (N=376)' },
+  { id: 'profiling', label: 'Embedded Silicon Profiling' },
+];
+---
+
+<DocsLayout
+  title="Empirical Benchmarks"
+  description="Comprehensive empirical results from Gazebo simulation (N=144+), physical Raspberry Pi 3 hardware runs (N=22 / N=84), and inter- vs. intra-process composition sweeps (N=376)."
+  currentSlug="/docs/benchmarks"
+  headings={headings}
+>
+  <section id="methodology" class="space-y-3">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Evaluation Scope</h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      Every evaluation compares four operational modes under identical attack injections:
+      <code class="font-mono text-xs">BYPASS</code> (unmitigated passthrough),
+      <code class="font-mono text-xs">STATIC</code> (binary E-Stop freeze),
+      <code class="font-mono text-xs">DYNAMIC</code> (category-indexed heuristic caps), and
+      <code class="font-mono text-xs">ADAPTIVE</code> (HOROS unified multi-vector RTA + 6-state autonomous recovery).
+    </p>
+  </section>
+
+  <section id="results" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Tables &amp; Empirical Figures</h2>
+    <BenchmarkVisualizer />
+  </section>
+
+  <section id="composition" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+      Inter-Process DDS vs. Intra-Process Composed Container (<code class="font-mono text-lg">N = 376</code>)
+    </h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      Measured across 20–200 Hz message sweeps in <code class="font-mono text-xs">composition_benchmark_comparison.csv</code> under standard Linux <code class="font-mono text-xs">SCHED_OTHER</code>. Under <code class="font-mono text-xs">composed:=auto</code>, Unitree Go2 uses decoupled 2-PID mode (ISO 26262 ASIL-D FFI), while UBTech YanShee uses <code class="font-mono text-xs">horos_composed_pipeline</code> to avoid Linux OOM kills on 1 GB RAM.
+    </p>
+
+    <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/75">
+      <table class="w-full min-w-[620px] border-collapse text-left text-xs sm:text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 text-xs tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+            <th class="py-2.5 pr-3">Metric / Dimension</th>
+            <th class="px-3 py-2.5">Inter-Process DDS</th>
+            <th class="px-3 py-2.5">Composed Container</th>
+            <th class="pl-3 py-2.5 text-emerald-600 dark:text-emerald-400">Empirical Gain</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+          {
+            COMPOSITION_BENCHMARK_ROWS.map((row) => (
+              <tr>
+                <td class="py-2.5 pr-3 font-semibold text-slate-900 dark:text-white">{row.metric}</td>
+                <td class="px-3 py-2.5 font-mono text-xs text-slate-600 dark:text-slate-400">{row.interProcess}</td>
+                <td class="px-3 py-2.5 font-mono text-xs font-semibold text-sky-600 dark:text-sky-400">{row.intraComposed}</td>
+                <td class="pl-3 py-2.5 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{row.delta}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="profiling" class="space-y-3">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Embedded Silicon Profiling (RQ3)</h2>
+    <ul class="space-y-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      <li>
+        <strong>C++ Kernel Selection Latency (<code class="font-mono text-xs">t_select</code>):</strong> <code class="font-mono text-xs">9.85 ± 3.52 µs</code> (median <code class="font-mono text-xs">9.00 µs</code>, max <code class="font-mono text-xs">21.00 µs</code>) on physical Raspberry Pi 3B ARM Cortex-A53 under <code class="font-mono text-xs">SCHED_OTHER</code>; <code class="font-mono text-xs">18.43 µs</code> on Go2 x86_64 and <code class="font-mono text-xs">12.03 µs</code> on YanShee x86_64.
+      </li>
+      <li>
+        <strong>Node-Loop Profiling (<code class="font-mono text-xs">profiling_mode_breakdown.csv</code>):</strong> <code class="font-mono text-xs">ADAPTIVE</code> (<code class="font-mono text-xs">n = 518</code>) achieves <code class="font-mono text-xs">0.960 ms</code> mean, <code class="font-mono text-xs">P95 = 0.821 ms</code>, <code class="font-mono text-xs">P99 = 1.119 ms</code> with only <code class="font-mono text-xs">0.77%</code> OS preemption outliers above the 2.0 ms budget.
+      </li>
+      <li>
+        <strong>Zero-Copy Composition Boost:</strong> Eliminating inter-process serialization stalls on Raspberry Pi 3B+ boosted physical mission progress by <strong>+311%</strong>.
+      </li>
+    </ul>
+  </section>
+</DocsLayout>

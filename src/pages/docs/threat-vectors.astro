@@ -1,0 +1,51 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import ThreatMatrix from '../../components/ThreatMatrix.astro';
+
+const headings = [
+  { id: 'taxonomy', label: 'Adversarial Taxonomy' },
+  { id: 'matrix', label: 'Interactive 13-Vector Catalog' },
+];
+---
+
+<DocsLayout
+  title="13 Canonical Threat Vectors"
+  description="Comprehensive three-tier adversarial test battery (V1a–V12) aligned with MITRE ATT&CK for Industrial Control Systems and Mobile Robotics."
+  currentSlug="/docs/threat-vectors"
+  headings={headings}
+>
+  <section id="taxonomy" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Adversarial Taxonomy</h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      HOROS is stress-tested against 13 distinct cyber and cyber-physical threat vectors grouped across three progressive tiers:
+    </p>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div class="rounded-xl border border-sky-500/30 bg-sky-500/5 p-4">
+        <span class="font-mono text-xs font-bold text-sky-600 dark:text-sky-400">Tier I (V1a–V5)</span>
+        <h3 class="mt-1 text-sm font-bold text-slate-900 dark:text-white">Classic Robotic Threats</h3>
+        <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+          Velocity surges, steering drift, 400 Hz flooding DoS, rogue node injection, service abuse, and DDS dropouts.
+        </p>
+      </div>
+      <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+        <span class="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">Tier II (V6–V8)</span>
+        <h3 class="mt-1 text-sm font-bold text-slate-900 dark:text-white">Barrier &amp; Sensory Tampering</h3>
+        <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+          CBF boundary grazing, 25 rad/s resonant chattering, and sensory blackout / clearance spoofing.
+        </p>
+      </div>
+      <div class="rounded-xl border border-rose-500/30 bg-rose-500/5 p-4">
+        <span class="font-mono text-xs font-bold text-rose-600 dark:text-rose-400">Tier III (V9–V12)</span>
+        <h3 class="mt-1 text-sm font-bold text-slate-900 dark:text-white">Adaptive &amp; Postural Attacks</h3>
+        <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+          1.5 Hz LiDAR flicker, strategic ON/OFF recovery flapping, compound stealth synergy, and 10 rad/s ZMP toppling.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="matrix" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Interactive 13-Vector Catalog</h2>
+    <ThreatMatrix />
+  </section>
+</DocsLayout>

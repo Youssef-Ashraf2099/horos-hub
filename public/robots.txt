@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://Youssef-Ashraf2099.github.io/horos-hub/sitemap-index.xml

@@ -1,0 +1,157 @@
+---
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import { SITE_META } from '../data/horos';
+import { withBase, absoluteUrl } from '../utils/url';
+
+interface Props {
+  title?: string;
+  description?: string;
+  keywords?: string[];
+  ogType?: 'website' | 'article';
+}
+
+const {
+  title = SITE_META.title,
+  description = SITE_META.description,
+  keywords = SITE_META.keywords,
+  ogType = 'website',
+} = Astro.props;
+
+const canonicalUrl = Astro.url?.href || absoluteUrl('/');
+const ogImageUrl = absoluteUrl('/images/HOROS.jpg');
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      name: 'HOROS Framework',
+      url: absoluteUrl('/'),
+      description: SITE_META.description,
+      author: {
+        '@type': 'Person',
+        name: SITE_META.authorName,
+      },
+    },
+    {
+      '@type': 'SoftwareSourceCode',
+      name: 'HOROS Framework',
+      alternateName: 'HOROS',
+      description: SITE_META.description,
+      version: SITE_META.version,
+      codeRepository: SITE_META.repoUrl,
+      programmingLanguage: ['C++', 'Python'],
+      runtimePlatform: 'ROS 2 Humble (Ubuntu 22.04 LTS)',
+      license: 'https://www.apache.org/licenses/LICENSE-2.0',
+      author: {
+        '@type': 'Person',
+        name: SITE_META.authorName,
+        description: SITE_META.authorHeadline,
+        url: SITE_META.authorPortfolio,
+        sameAs: [SITE_META.authorPortfolio, SITE_META.authorLinkedin, SITE_META.authorGithub],
+        knowsAbout: [
+          'Cybersecurity',
+          'Software Engineering',
+          'Systems Engineering',
+          'ROS 2',
+          'C++',
+          'Python',
+        ],
+        affiliation: {
+          '@type': 'CollegeOrUniversity',
+          name: SITE_META.institution,
+        },
+      },
+      keywords: keywords.join(', '),
+    },
+    {
+      '@type': 'Thesis',
+      name: 'Severity-Aware Adaptive Response and Autonomous Safe Recovery for Robotic Systems under Cyberattack',
+      author: {
+        '@type': 'Person',
+        name: SITE_META.authorName,
+      },
+      sourceOrganization: {
+        '@type': 'CollegeOrUniversity',
+        name: SITE_META.institution,
+      },
+      datePublished: '2026',
+      about: ['ROS 2 cybersecurity', 'robot intrusion prevention', 'HOROS framework'],
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Primary SEO -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords.join(', ')} />
+    <meta name="author" content={SITE_META.authorName} />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="theme-color" content="#0EA5E9" />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <link rel="icon" type="image/png" sizes="96x96" href={withBase('/favicon.png')} />
+    <link rel="apple-touch-icon" href={withBase('/favicon.png')} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="HOROS Framework" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:alt" content="HOROS Autonomous Robot Cyber-Resilience Framework Shield Logo" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+    <!-- Zero-flash theme initialization -->
+    <script is:inline>
+      (() => {
+        const stored = localStorage.getItem('horos-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'light' || (!stored && !prefersDark)) {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body
+    class="min-h-screen bg-white text-slate-900 antialiased selection:bg-sky-500/20 selection:text-sky-700 dark:bg-slate-950 dark:text-slate-100 dark:selection:bg-sky-400/25 dark:selection:text-sky-200"
+  >
+    <Navbar currentPath={Astro.url.pathname} />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

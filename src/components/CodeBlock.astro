@@ -1,0 +1,66 @@
+---
+import { Copy, Check, Terminal } from '@lucide/astro';
+
+interface Props {
+  code: string;
+  label?: string;
+  lang?: string;
+  wrap?: boolean;
+}
+
+const { code, label = 'bash', lang = 'bash', wrap = false } = Astro.props;
+const blockId = `code-${Math.random().toString(36).slice(2, 9)}`;
+---
+
+<div class="min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-950 shadow-sm dark:border-slate-800">
+  <div class="flex items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/90 px-4 py-2">
+    <div class="flex min-w-0 items-center gap-2 text-xs font-mono text-slate-300">
+      <Terminal class="h-3.5 w-3.5 shrink-0 text-sky-400" />
+      <span class="truncate">{label}</span>
+    </div>
+    <button
+      type="button"
+      data-copy-target={blockId}
+      class="horos-copy-btn inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-200 transition hover:border-sky-500/60 hover:text-sky-300"
+    >
+      <Copy class="copy-icon h-3 w-3" />
+      <Check class="check-icon hidden h-3 w-3 text-emerald-400" />
+      <span class="copy-label">Copy</span>
+    </button>
+  </div>
+  <pre
+    class:list={[
+      'min-w-0 overflow-x-auto p-4 text-xs leading-relaxed text-slate-100',
+      wrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre',
+    ]}
+  ><code id={blockId} class={`language-${lang}`}>{code}</code></pre>
+</div>
+
+<script is:inline>
+  if (!window.__horosCopyInit) {
+    window.__horosCopyInit = true;
+    document.addEventListener('click', async (event) => {
+      const btn = event.target.closest('.horos-copy-btn');
+      if (!btn) return;
+      const targetId = btn.getAttribute('data-copy-target');
+      const codeEl = targetId ? document.getElementById(targetId) : null;
+      if (!codeEl) return;
+      try {
+        await navigator.clipboard.writeText(codeEl.textContent || '');
+        const copyIcon = btn.querySelector('.copy-icon');
+        const checkIcon = btn.querySelector('.check-icon');
+        const label = btn.querySelector('.copy-label');
+        copyIcon?.classList.add('hidden');
+        checkIcon?.classList.remove('hidden');
+        if (label) label.textContent = 'Copied';
+        setTimeout(() => {
+          copyIcon?.classList.remove('hidden');
+          checkIcon?.classList.add('hidden');
+          if (label) label.textContent = 'Copy';
+        }, 1600);
+      } catch {
+        // Clipboard permission unavailable
+      }
+    });
+  }
+</script>

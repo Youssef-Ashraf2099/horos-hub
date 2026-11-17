@@ -1,0 +1,377 @@
+---
+import {
+  PRESENTATION_HIGHLIGHTS,
+  GO2_BENCHMARK_ROWS,
+  YANSHEE_SIM_BENCHMARK_ROWS,
+  PHYSICAL_YANSHEE_STATS,
+} from '../data/horos';
+import { ChartColumn, Cpu, Activity } from '@lucide/astro';
+---
+
+<div class="space-y-8">
+  <!-- Interactive Benchmark Tables -->
+  <div class="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900/80">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+      <div>
+        <span class="text-xs font-semibold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+          144 Simulation Trials · 22 Live Hardware Runs
+        </span>
+        <h3 class="mt-1 text-lg font-bold text-slate-900 dark:text-white">
+          Empirical Benchmark Suite
+        </h3>
+      </div>
+
+      <div class="flex flex-wrap gap-1.5" role="tablist" aria-label="Benchmark Datasets">
+        <button
+          type="button"
+          data-bench-tab="highlights"
+          class="bench-tab-btn rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition"
+        >
+          Highlights
+        </button>
+        <button
+          type="button"
+          data-bench-tab="go2"
+          class="bench-tab-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+        >
+          Go2 Sim (N=79)
+        </button>
+        <button
+          type="button"
+          data-bench-tab="yanshee-sim"
+          class="bench-tab-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+        >
+          YanShee Sim (N=72)
+        </button>
+        <button
+          type="button"
+          data-bench-tab="yanshee-real"
+          class="bench-tab-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+        >
+          Physical RPi 3 (N=22)
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 1: Presentation Highlights -->
+    <div id="bench-panel-highlights" class="bench-panel mt-5 overflow-x-auto">
+      <table class="w-full min-w-[600px] border-collapse text-left text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 text-xs tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+            <th class="py-3 pr-4 font-semibold">Metric</th>
+            <th class="px-4 py-3 font-semibold">Without Defense</th>
+            <th class="px-4 py-3 font-semibold">Standard E-Stop</th>
+            <th class="pl-4 py-3 font-semibold text-emerald-600 dark:text-emerald-400">With HOROS (Adaptive)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+          {
+            PRESENTATION_HIGHLIGHTS.map((row) => (
+              <tr class="transition hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="py-3 pr-4 font-semibold text-slate-900 dark:text-white">{row.metric}</td>
+                <td class="px-4 py-3 font-mono text-xs text-rose-600 dark:text-rose-400">{row.withoutDefense}</td>
+                <td class="px-4 py-3 font-mono text-xs text-amber-600 dark:text-amber-400">{row.standardEStop}</td>
+                <td class="pl-4 py-3 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{row.withHoros}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+      <p class="mt-4 rounded-xl border border-sky-500/25 bg-sky-500/5 px-4 py-3 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+        <strong class="text-sky-700 dark:text-sky-300">Key Synthesis:</strong> Traditional E-Stops enforce safety at 0% mission availability, while heuristic throttlers keep moving but crash (72–100% collision rate). HOROS achieves zero collisions, zero biped falls, and 50–60% uninterrupted mission progress.
+      </p>
+    </div>
+
+    <!-- Tab 2: Go2 Sim -->
+    <div id="bench-panel-go2" class="bench-panel mt-5 hidden overflow-x-auto">
+      <p class="mb-3 text-xs text-slate-600 dark:text-slate-400">
+        Unitree Go2 Quadruped Simulation (<code class="font-mono">N = 79</code> total trials, <code class="font-mono">N = 18</code> core balanced comparison).
+      </p>
+      <table class="w-full min-w-[680px] border-collapse text-left text-xs sm:text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 text-xs tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+            <th class="py-3 pr-3 font-semibold">Evaluation Dimension</th>
+            <th class="px-3 py-3 font-semibold">BYPASS</th>
+            <th class="px-3 py-3 font-semibold">STATIC (E-Stop)</th>
+            <th class="px-3 py-3 font-semibold">DYNAMIC</th>
+            <th class="pl-3 py-3 font-semibold text-emerald-600 dark:text-emerald-400">ADAPTIVE (HOROS)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+          {
+            GO2_BENCHMARK_ROWS.map((r) => (
+              <tr class="transition hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="py-3 pr-3 font-semibold text-slate-900 dark:text-white">{r.dimension}</td>
+                <td class="px-3 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">{r.bypass}</td>
+                <td class="px-3 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">{r.staticMode}</td>
+                <td class="px-3 py-3 font-mono text-xs text-amber-600 dark:text-amber-400">{r.dynamicMode}</td>
+                <td class="pl-3 py-3 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{r.adaptiveHoros}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tab 3: YanShee Sim -->
+    <div id="bench-panel-yanshee-sim" class="bench-panel mt-5 hidden overflow-x-auto">
+      <p class="mb-3 text-xs text-slate-600 dark:text-slate-400">
+        UBTech YanShee Biped Humanoid Simulation (<code class="font-mono">N = 72</code> matched trials across 4 mitigation modes).
+      </p>
+      <table class="w-full min-w-[680px] border-collapse text-left text-xs sm:text-sm">
+        <thead>
+          <tr class="border-b border-slate-200 text-xs tracking-wider text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+            <th class="py-3 pr-3 font-semibold">Evaluation Dimension</th>
+            <th class="px-3 py-3 font-semibold">BYPASS</th>
+            <th class="px-3 py-3 font-semibold">STATIC (E-Stop)</th>
+            <th class="px-3 py-3 font-semibold">DYNAMIC</th>
+            <th class="pl-3 py-3 font-semibold text-emerald-600 dark:text-emerald-400">ADAPTIVE (HOROS)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+          {
+            YANSHEE_SIM_BENCHMARK_ROWS.map((r) => (
+              <tr class="transition hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="py-3 pr-3 font-semibold text-slate-900 dark:text-white">{r.dimension}</td>
+                <td class="px-3 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">{r.bypass}</td>
+                <td class="px-3 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">{r.staticMode}</td>
+                <td class="px-3 py-3 font-mono text-xs text-amber-600 dark:text-amber-400">{r.dynamicMode}</td>
+                <td class="pl-3 py-3 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{r.adaptiveHoros}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tab 4: Physical Hardware -->
+    <div id="bench-panel-yanshee-real" class="bench-panel mt-5 hidden">
+      <p class="mb-4 text-xs text-slate-600 dark:text-slate-400">
+        Live Physical Deployment on UBTech YanShee with onboard <strong>Raspberry Pi 3 Model B (1 GB RAM)</strong> &amp; external Chest IR sensor (<code class="font-mono">N = 22</code> live runs).
+      </p>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          PHYSICAL_YANSHEE_STATS.map((stat) => (
+            <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/70">
+              <span class="text-xs font-medium text-slate-500 dark:text-slate-400">{stat.label}</span>
+              <p class="mt-1 font-mono text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{stat.value}</p>
+              <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">{stat.note}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Empirical SVG Charts Row -->
+  <div class="grid gap-6 lg:grid-cols-2">
+    <!-- Figure 1: Cross-Domain Radar Synthesis -->
+    <div class="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-mono font-semibold text-sky-600 uppercase dark:text-sky-400">Figure 01 · Sim vs. Real</span>
+          <h4 class="text-base font-bold text-slate-900 dark:text-white">Cross-Domain Resilience Synthesis</h4>
+        </div>
+        <Activity class="h-4 w-4 text-sky-500" />
+      </div>
+      <div class="mt-4 flex justify-center">
+        <svg viewBox="0 0 360 280" class="w-full max-w-sm" role="img" aria-label="Cross-Domain Radar Synthesis Chart comparing Simulation and Real Hardware">
+          <!-- Pentagon Grid Rings -->
+          <g fill="none" stroke="currentColor" class="text-slate-200 dark:text-slate-800" stroke-width="1">
+            <polygon points="180,45 270,110 236,215 124,215 90,110" />
+            <polygon points="180,69 248,118 222,197 138,197 112,118" />
+            <polygon points="180,93 225,126 208,179 152,179 135,126" />
+            <polygon points="180,117 203,134 194,161 166,161 157,134" />
+            <line x1="180" y1="140" x2="180" y2="45" />
+            <line x1="180" y1="140" x2="270" y2="110" />
+            <line x1="180" y1="140" x2="236" y2="215" />
+            <line x1="180" y1="140" x2="124" y2="215" />
+            <line x1="180" y1="140" x2="90" y2="110" />
+          </g>
+          <!-- Simulation Polygon (Gazebo) -->
+          <polygon
+            points="180,47 224,125 234,212 134,203 94,111"
+            fill="rgba(14, 165, 233, 0.22)"
+            stroke="#0EA5E9"
+            stroke-width="2.2"
+          />
+          <!-- Physical RPi 3 Polygon -->
+          <polygon
+            points="180,45 233,122 230,208 128,210 92,110"
+            fill="rgba(16, 185, 129, 0.20)"
+            stroke="#10B981"
+            stroke-width="2.2"
+          />
+          <!-- Axis Labels -->
+          <g class="fill-slate-700 text-[10px] font-semibold dark:fill-slate-300" text-anchor="middle">
+            <text x="180" y="33">Safety (0% Crash)</text>
+            <text x="308" y="112">Continuity</text>
+            <text x="255" y="233">Latency (&lt;10µs)</text>
+            <text x="102" y="233">Memory (RPi 3)</text>
+            <text x="52" y="112">Balance</text>
+          </g>
+        </svg>
+      </div>
+      <div class="mt-2 flex items-center justify-center gap-5 text-xs">
+        <span class="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span class="h-2.5 w-2.5 rounded-full bg-sky-500"></span> Gazebo Sim (N=144)
+        </span>
+        <span class="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Physical RPi 3 (N=22)
+        </span>
+      </div>
+    </div>
+
+    <!-- Figure 2: Synchronized Attack & Recovery Timeline -->
+    <div class="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <div class="flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-mono font-semibold text-amber-600 uppercase dark:text-amber-400">Figure 02 · Telemetry Profile</span>
+          <h4 class="text-base font-bold text-slate-900 dark:text-white">Attack Detection, Clamp &amp; S-Curve Recovery</h4>
+        </div>
+        <Cpu class="h-4 w-4 text-amber-500" />
+      </div>
+      <div class="mt-4">
+        <svg viewBox="0 0 420 220" class="w-full" role="img" aria-label="Synchronized velocity and recovery timeline under cyberattack">
+          <!-- Shaded Attack Window -->
+          <rect x="115" y="22" width="145" height="156" rx="4" fill="rgba(244, 63, 94, 0.12)" />
+          <text x="187" y="36" text-anchor="middle" class="fill-rose-600 text-[9px] font-bold dark:fill-rose-400">ACTIVE CYBERATTACK</text>
+
+          <!-- Shaded Recovery Window -->
+          <rect x="260" y="22" width="75" height="156" rx="4" fill="rgba(245, 158, 11, 0.12)" />
+          <text x="297" y="36" text-anchor="middle" class="fill-amber-600 text-[9px] font-bold dark:fill-amber-400">S-CURVE (~1.2s)</text>
+
+          <!-- Axes -->
+          <line x1="40" y1="178" x2="400" y2="178" stroke="currentColor" class="text-slate-300 dark:text-slate-700" stroke-width="1.2" />
+          <line x1="40" y1="22" x2="40" y2="178" stroke="currentColor" class="text-slate-300 dark:text-slate-700" stroke-width="1.2" />
+
+          <!-- Malicious /cmd_vel dashed line (+3.0 m/s spike) -->
+          <polyline
+            fill="none"
+            stroke="#F43F5E"
+            stroke-width="2"
+            stroke-dasharray="4 3"
+            points="40,120 115,120 120,45 255,45 260,120 400,120"
+          />
+
+          <!-- HOROS Safe SD-CBF + S-Curve Output -->
+          <path
+            d="M40,120 L115,120 C122,120 128,142 145,142 L255,142 C275,142 295,120 335,120 L400,120"
+            fill="none"
+            stroke="#10B981"
+            stroke-width="2.8"
+          />
+
+          <!-- Labels -->
+          <text x="46" y="112" class="fill-slate-500 text-[9px] dark:fill-slate-400">Nominal</text>
+          <text x="187" y="60" text-anchor="middle" class="fill-rose-500 text-[9px] font-mono">Injected +3.0 m/s</text>
+          <text x="187" y="156" text-anchor="middle" class="fill-emerald-600 text-[9px] font-mono font-semibold dark:fill-emerald-400">SD-CBF Safe Cruise</text>
+          <text x="368" y="112" text-anchor="middle" class="fill-emerald-600 text-[9px] dark:fill-emerald-400">Resumed</text>
+          <text x="220" y="200" text-anchor="middle" class="fill-slate-500 text-[9px] dark:fill-slate-400">Time (s) · Inline Decision Latency &lt; 10 µs</text>
+        </svg>
+      </div>
+      <div class="mt-2 flex items-center justify-center gap-5 text-xs">
+        <span class="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span class="h-0.5 w-4 border-t-2 border-dashed border-rose-500"></span> Malicious /cmd_vel
+        </span>
+        <span class="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span class="h-0.5 w-4 bg-emerald-500"></span> HOROS Safe Output
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Figure 3: Cross-Morphology Comparative Bars -->
+  <div class="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900/80">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <span class="text-[11px] font-mono font-semibold text-emerald-600 uppercase dark:text-emerald-400">Figure 03 · Cross-Morphology Study</span>
+        <h4 class="text-base font-bold text-slate-900 dark:text-white">
+          Task Continuity vs. Collision Rate Across Mitigation Modes
+        </h4>
+      </div>
+      <ChartColumn class="h-4 w-4 text-emerald-500" />
+    </div>
+
+    <div class="mt-5 grid gap-6 md:grid-cols-2">
+      <!-- Crash-Free Continuity -->
+      <div class="space-y-3">
+        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">Crash-Free Task Continuity (Higher is Better)</p>
+        <div class="space-y-2 text-xs">
+          <div>
+            <div class="flex justify-between font-mono"><span>BYPASS / STATIC E-Stop</span><span>0.0%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-0 rounded-full bg-slate-400"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono"><span>DYNAMIC Heuristic (Go2 / YanShee)</span><span>12.1% – 15.8%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[15%] rounded-full bg-amber-500"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono font-bold text-sky-600 dark:text-sky-400"><span>HOROS Go2 Sim (N=18)</span><span>40.0%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[40%] rounded-full bg-sky-500"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono font-bold text-sky-600 dark:text-sky-400"><span>HOROS YanShee Sim (N=18)</span><span>49.7%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[50%] rounded-full bg-sky-500"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono font-bold text-emerald-600 dark:text-emerald-400"><span>HOROS Physical RPi 3 (N=22)</span><span>58.4%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[58.4%] rounded-full bg-emerald-500"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Collision / Topple Rate -->
+      <div class="space-y-3">
+        <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">Collision &amp; Fall Risk Under Attack (Lower is Better)</p>
+        <div class="space-y-2 text-xs">
+          <div>
+            <div class="flex justify-between font-mono text-rose-600 dark:text-rose-400"><span>BYPASS Collisions (Go2 / YanShee)</span><span>100.0%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-full rounded-full bg-rose-500"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono text-rose-600 dark:text-rose-400"><span>BYPASS Biped Topple Falls</span><span>88.9%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[88.9%] rounded-full bg-rose-500"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono text-amber-600 dark:text-amber-400"><span>DYNAMIC Heuristic Collisions</span><span>66.7% – 72.2%</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[70%] rounded-full bg-amber-500"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono font-bold text-emerald-600 dark:text-emerald-400"><span>HOROS YanShee Sim &amp; Physical Collisions</span><span>0.0% (0/40)</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[1%] rounded-full bg-emerald-500"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between font-mono font-bold text-emerald-600 dark:text-emerald-400"><span>HOROS Biped Topple Falls (All Modes)</span><span>0.0% (0/40)</span></div>
+            <div class="mt-1 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full w-[1%] rounded-full bg-emerald-500"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const tabBtns = document.querySelectorAll('.bench-tab-btn');
+    const panels = document.querySelectorAll('.bench-panel');
+
+    tabBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-bench-tab');
+        if (!target) return;
+
+        tabBtns.forEach((b) => {
+          b.classList.remove('bg-sky-600', 'text-white');
+          b.classList.add('border', 'border-slate-200', 'bg-slate-50', 'text-slate-700', 'dark:border-slate-700', 'dark:bg-slate-800', 'dark:text-slate-300');
+        });
+
+        btn.classList.add('bg-sky-600', 'text-white');
+        btn.classList.remove('border', 'border-slate-200', 'bg-slate-50', 'text-slate-700', 'dark:border-slate-700', 'dark:bg-slate-800', 'dark:text-slate-300');
+
+        panels.forEach((p) => p.classList.add('hidden'));
+        document.getElementById(`bench-panel-${target}`)?.classList.remove('hidden');
+      });
+    });
+  })();
+</script>

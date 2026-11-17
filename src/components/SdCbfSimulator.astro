@@ -1,0 +1,314 @@
+---
+import { SlidersHorizontal, ShieldAlert } from '@lucide/astro';
+---
+
+<div
+  class="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900/80"
+>
+  <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+        <SlidersHorizontal class="h-3.5 w-3.5" />
+        Interactive Safety Barrier Lab
+      </div>
+      <h3 class="mt-1 text-lg font-bold text-slate-900 dark:text-white">
+        Live SD-CBF &amp; ISO 3691-4 Range-Rate Simulator
+      </h3>
+      <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+        Test how HOROS clamps injected malicious velocities in real time relative to physical morphology boundaries.
+      </p>
+    </div>
+
+    <!-- Morphology selector -->
+    <div class="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-950">
+      <button
+        type="button"
+        data-morph="go2"
+        class="morph-btn rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-xs transition dark:bg-sky-600 dark:text-white"
+      >
+        Unitree Go2 (d_crit = 0.45 m)
+      </button>
+      <button
+        type="button"
+        data-morph="yanshee"
+        class="morph-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+      >
+        UBTech YanShee (d_crit = 0.25 m)
+      </button>
+    </div>
+  </div>
+
+  <!-- Attack Presets -->
+  <div class="mt-4 flex flex-wrap items-center gap-2">
+    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Attack Presets:</span>
+    <button
+      type="button"
+      data-preset="nominal"
+      class="preset-btn rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    >
+      Nominal Patrol (0.8 m/s)
+    </button>
+    <button
+      type="button"
+      data-preset="v1a"
+      class="preset-btn rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-700 transition hover:bg-rose-500/20 dark:text-rose-300"
+    >
+      V1a Velocity Surge (+3.0 m/s)
+    </button>
+    <button
+      type="button"
+      data-preset="v6"
+      class="preset-btn rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 transition hover:bg-amber-500/20 dark:text-amber-300"
+    >
+      V6 Boundary Grazing (d_min → d_crit)
+    </button>
+    <button
+      type="button"
+      data-preset="pedestrian"
+      class="preset-btn rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-700 transition hover:bg-sky-500/20 dark:text-sky-300"
+    >
+      ISO 3691-4 Oncoming Pedestrian
+    </button>
+  </div>
+
+  <!-- Controls + Live Output -->
+  <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    <!-- Sliders -->
+    <div class="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+      <div>
+        <div class="flex justify-between text-xs font-medium">
+          <label for="sim-vcmd" class="text-slate-700 dark:text-slate-300">Injected Command Speed (v_cmd)</label>
+          <span id="val-vcmd" class="font-mono font-bold text-rose-600 dark:text-rose-400">3.00 m/s</span>
+        </div>
+        <input id="sim-vcmd" type="range" min="0" max="3.5" step="0.05" value="3.0" class="mt-1.5 w-full accent-sky-500" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs font-medium">
+          <label for="sim-dmin" class="text-slate-700 dark:text-slate-300">Live Obstacle Clearance (d_min)</label>
+          <span id="val-dmin" class="font-mono font-bold text-slate-900 dark:text-white">0.95 m</span>
+        </div>
+        <input id="sim-dmin" type="range" min="0.15" max="2.5" step="0.02" value="0.95" class="mt-1.5 w-full accent-sky-500" />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-xs font-medium">
+          <label for="sim-vobs" class="text-slate-700 dark:text-slate-300">Obstacle Closing Velocity (v_obs,closing)</label>
+          <span id="val-vobs" class="font-mono font-bold text-slate-900 dark:text-white">0.00 m/s</span>
+        </div>
+        <input id="sim-vobs" type="range" min="0" max="1.2" step="0.05" value="0.0" class="mt-1.5 w-full accent-sky-500" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <div class="flex justify-between text-xs font-medium">
+            <label for="sim-ts" class="text-slate-700 dark:text-slate-300">Sample Step T_s</label>
+            <span id="val-ts" class="font-mono text-slate-800 dark:text-slate-200">50 ms</span>
+          </div>
+          <input id="sim-ts" type="range" min="10" max="120" step="5" value="50" class="mt-1.5 w-full accent-sky-500" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs font-medium">
+            <label for="sim-aphys" class="text-slate-700 dark:text-slate-300">Decel a_phys</label>
+            <span id="val-aphys" class="font-mono text-slate-800 dark:text-slate-200">1.8 m/s²</span>
+          </div>
+          <input id="sim-aphys" type="range" min="0.8" max="3.0" step="0.1" value="1.8" class="mt-1.5 w-full accent-sky-500" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Computed Output -->
+    <div class="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/80">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Effective Margin h_eff</span>
+          <p id="out-heff" class="mt-1 font-mono text-xl font-bold text-sky-600 dark:text-sky-400">0.50 m</p>
+          <span id="out-dcrit" class="text-[11px] text-slate-500 dark:text-slate-400">d_crit = 0.45 m · d_impact = 0.32 m</span>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
+          <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400">SD-CBF Upper Bound</span>
+          <p id="out-vsdcbf" class="mt-1 font-mono text-xl font-bold text-emerald-600 dark:text-emerald-400">1.25 m/s</p>
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">Exact discrete-time cap</span>
+        </div>
+      </div>
+
+      <!-- Visual bar comparison -->
+      <div class="space-y-2.5 rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+        <div>
+          <div class="flex justify-between text-xs">
+            <span class="font-medium text-rose-600 dark:text-rose-400">Untrusted Input (v_cmd)</span>
+            <span id="bar-cmd-text" class="font-mono font-semibold text-rose-600 dark:text-rose-400">3.00 m/s</span>
+          </div>
+          <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+            <div id="bar-cmd" class="h-full rounded-full bg-rose-500 transition-all duration-150" style="width: 86%"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-xs">
+            <span class="font-medium text-emerald-600 dark:text-emerald-400">HOROS Safe Output (v_safe)</span>
+            <span id="bar-safe-text" class="font-mono font-semibold text-emerald-600 dark:text-emerald-400">1.25 m/s</span>
+          </div>
+          <div class="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+            <div id="bar-safe" class="h-full rounded-full bg-emerald-500 transition-all duration-150" style="width: 36%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Banner -->
+      <div
+        id="sim-status-box"
+        class="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200"
+      >
+        <ShieldAlert id="sim-status-icon" class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+        <div>
+          <p id="sim-status-title" class="font-bold">SD-CBF Active Clamp Engaged</p>
+          <p id="sim-status-desc" class="mt-0.5 leading-relaxed opacity-90">
+            Injected command exceeds the exact stopping envelope; HOROS clamps velocity to 1.25 m/s so the robot halts strictly outside d_impact (0.32 m).
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const morphologies = {
+      go2: { dCrit: 0.45, dImpact: 0.32, name: 'Unitree Go2', defaultDecel: 1.8 },
+      yanshee: { dCrit: 0.25, dImpact: 0.12, name: 'UBTech YanShee', defaultDecel: 1.1 },
+    };
+
+    let currentMorph = 'go2';
+    const T_PRED = 0.25; // predictive lookahead horizon (s)
+
+    const elVcmd = document.getElementById('sim-vcmd');
+    const elDmin = document.getElementById('sim-dmin');
+    const elVobs = document.getElementById('sim-vobs');
+    const elTs = document.getElementById('sim-ts');
+    const elAphys = document.getElementById('sim-aphys');
+
+    const valVcmd = document.getElementById('val-vcmd');
+    const valDmin = document.getElementById('val-dmin');
+    const valVobs = document.getElementById('val-vobs');
+    const valTs = document.getElementById('val-ts');
+    const valAphys = document.getElementById('val-aphys');
+
+    const outHeff = document.getElementById('out-heff');
+    const outDcrit = document.getElementById('out-dcrit');
+    const outVsdcbf = document.getElementById('out-vsdcbf');
+    const barCmd = document.getElementById('bar-cmd');
+    const barSafe = document.getElementById('bar-safe');
+    const barCmdText = document.getElementById('bar-cmd-text');
+    const barSafeText = document.getElementById('bar-safe-text');
+    const statusBox = document.getElementById('sim-status-box');
+    const statusTitle = document.getElementById('sim-status-title');
+    const statusDesc = document.getElementById('sim-status-desc');
+
+    function update() {
+      const m = morphologies[currentMorph];
+      const vCmd = parseFloat(elVcmd.value);
+      const dMin = parseFloat(elDmin.value);
+      const vObs = parseFloat(elVobs.value);
+      const Ts = parseFloat(elTs.value) / 1000.0;
+      const aPhys = parseFloat(elAphys.value);
+
+      valVcmd.textContent = `${vCmd.toFixed(2)} m/s`;
+      valDmin.textContent = `${dMin.toFixed(2)} m`;
+      valVobs.textContent = `${vObs.toFixed(2)} m/s`;
+      valTs.textContent = `${Math.round(Ts * 1000)} ms`;
+      valAphys.textContent = `${aPhys.toFixed(1)} m/s²`;
+
+      // h_eff = (d_min - d_crit) - v_obs_closing * T_pred
+      const hEff = (dMin - m.dCrit) - vObs * T_PRED;
+      let vBound = 0;
+      let vSafe = 0;
+      let isReverseBackoff = false;
+
+      if (hEff > 0) {
+        vBound = Math.sqrt(Math.pow(aPhys * Ts, 2) + 2 * aPhys * hEff) - aPhys * Ts;
+        vSafe = Math.min(vCmd, Math.max(0, vBound));
+      } else {
+        vBound = 0;
+        if (vObs > 0.15) {
+          isReverseBackoff = true;
+          vSafe = -Math.min(0.25, vObs * 0.5);
+        } else {
+          vSafe = 0;
+        }
+      }
+
+      outHeff.textContent = `${hEff.toFixed(2)} m`;
+      outDcrit.textContent = `d_crit = ${m.dCrit.toFixed(2)} m · d_impact = ${m.dImpact.toFixed(2)} m`;
+      outVsdcbf.textContent = isReverseBackoff ? `${vSafe.toFixed(2)} m/s` : `${vBound.toFixed(2)} m/s`;
+
+      const cmdPct = Math.min(100, Math.round((vCmd / 3.5) * 100));
+      const safePct = Math.min(100, Math.round((Math.abs(vSafe) / 3.5) * 100));
+      barCmd.style.width = `${cmdPct}%`;
+      barSafe.style.width = `${safePct}%`;
+      barCmdText.textContent = `${vCmd.toFixed(2)} m/s`;
+      barSafeText.textContent = `${vSafe.toFixed(2)} m/s`;
+
+      if (isReverseBackoff) {
+        statusBox.className = 'flex items-start gap-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-900 dark:text-rose-200';
+        statusTitle.textContent = 'ISO 3691-4 Active Reverse Backoff';
+        statusDesc.textContent = `Oncoming obstacle closing at ${vObs.toFixed(2)} m/s breached h_eff ≤ 0. HOROS executes active reverse disengagement (${vSafe.toFixed(2)} m/s) to preserve clearance.`;
+      } else if (hEff <= 0) {
+        statusBox.className = 'flex items-start gap-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-900 dark:text-rose-200';
+        statusTitle.textContent = 'Nagumo Barrier Boundary Hold (v_safe = 0.00 m/s)';
+        statusDesc.textContent = `Obstacle at d_min = ${dMin.toFixed(2)} m reached or crossed d_crit (${m.dCrit.toFixed(2)} m). Forward motion is unconditionally zeroed outside d_impact (${m.dImpact.toFixed(2)} m).`;
+      } else if (vCmd > vBound) {
+        statusBox.className = 'flex items-start gap-2.5 rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200';
+        statusTitle.textContent = 'SD-CBF Active Clamp Engaged';
+        statusDesc.textContent = `Malicious or unsafe input (${vCmd.toFixed(2)} m/s) exceeds discrete stopping bound (${vBound.toFixed(2)} m/s). HOROS clamps velocity while preserving forward mission progress.`;
+      } else {
+        statusBox.className = 'flex items-start gap-2.5 rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-3 text-xs text-emerald-900 dark:text-emerald-200';
+        statusTitle.textContent = 'Safe Envelope Nominal (Passthrough Verified)';
+        statusDesc.textContent = `Commanded speed (${vCmd.toFixed(2)} m/s) lies strictly inside the SD-CBF safe set (≤ ${vBound.toFixed(2)} m/s). Zero mission interference.`;
+      }
+    }
+
+    document.querySelectorAll('.morph-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentMorph = btn.getAttribute('data-morph') || 'go2';
+        document.querySelectorAll('.morph-btn').forEach((b) => {
+          b.classList.remove('bg-white', 'text-slate-900', 'shadow-xs', 'dark:bg-sky-600', 'dark:text-white');
+          b.classList.add('text-slate-600', 'dark:text-slate-400');
+        });
+        btn.classList.add('bg-white', 'text-slate-900', 'shadow-xs', 'dark:bg-sky-600', 'dark:text-white');
+        btn.classList.remove('text-slate-600', 'dark:text-slate-400');
+        elAphys.value = String(morphologies[currentMorph].defaultDecel);
+        update();
+      });
+    });
+
+    document.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const p = btn.getAttribute('data-preset');
+        if (p === 'nominal') {
+          elVcmd.value = '0.80';
+          elDmin.value = '1.50';
+          elVobs.value = '0.00';
+        } else if (p === 'v1a') {
+          elVcmd.value = '3.00';
+          elDmin.value = '0.95';
+          elVobs.value = '0.00';
+        } else if (p === 'v6') {
+          elVcmd.value = '1.20';
+          elDmin.value = currentMorph === 'go2' ? '0.45' : '0.25';
+          elVobs.value = '0.00';
+        } else if (p === 'pedestrian') {
+          elVcmd.value = '1.00';
+          elDmin.value = '0.55';
+          elVobs.value = '0.75';
+        }
+        update();
+      });
+    });
+
+    [elVcmd, elDmin, elVobs, elTs, elAphys].forEach((input) => input?.addEventListener('input', update));
+    update();
+  })();
+</script>

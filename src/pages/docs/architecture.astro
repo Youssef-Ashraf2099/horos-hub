@@ -1,0 +1,199 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import InteractivePipeline from '../../components/InteractivePipeline.astro';
+import SdCbfSimulator from '../../components/SdCbfSimulator.astro';
+import {
+  ZERO_TRUST_TRIPWIRES,
+  RECOVERY_GATES,
+  RECOVERY_FSM_STATES,
+  ABLATION_MODES,
+  UHAL_PLATFORMS,
+} from '../../data/horos';
+import { renderKatex } from '../../utils/math';
+
+const headings = [
+  { id: 'simulator-flow', label: 'Interactive Data-Flow Simulator' },
+  { id: 'risk-engine', label: 'Deterministic Risk Score Engine' },
+  { id: 'domain-1', label: 'Domain 1: Mitigation & Zero-Trust' },
+  { id: 'domain-2', label: 'Domain 2: 6-State FSM & Gates G1–G5' },
+  { id: 'choke-uhal', label: 'Actuator Choke Point & U-HAL' },
+  { id: 'sd-cbf-lab', label: 'Interactive SD-CBF Lab' },
+];
+
+const eqTConorm = renderKatex(
+  String.raw`S_{\text{raw}}(t) = \Phi_{i^*}(t) + \bigl(1.0 - \Phi_{i^*}(t)\bigr)\sum_{j \ne i^*} w_j \Phi_j(t), \quad \mathbf{w} = [0.40,\; 0.35,\; 0.25]^T`,
+  true
+);
+const eqStopping = renderKatex(String.raw`v T_s + \frac{v^2}{2 a_{\text{phys}}} \le h_{\text{eff}}`, false);
+const eqSdCbf = renderKatex(
+  String.raw`v_{\text{SD-CBF}}(h_{\text{eff}}) = \sqrt{(a_{\text{phys}} T_s)^2 + 2 a_{\text{phys}} h_{\text{eff}}} - a_{\text{phys}} T_s`,
+  true
+);
+const eqHeff = renderKatex(
+  String.raw`h_{\text{eff}} = (d_{\min} - d_{\text{crit}}) - v_{\text{obs,closing}} T_{\text{pred}}`,
+  false
+);
+const eqHermite = renderKatex(
+  String.raw`v_{\text{time}}(t) = v_{\text{floor}} + (v_{\max} - v_{\text{floor}})\cdot(3\tau^2 - 2\tau^3), \quad v_{\text{cmd}}[k] = \min\bigl(v_{\text{time}}[k],\; v_{\text{ceiling}}[k]\bigr)`,
+  true
+);
+---
+
+<DocsLayout
+  title="Dual-Domain Architecture"
+  description="Full technical specification derived from TECH-DOC: Risk Score Engine, Polymorphic Mitigation Engine, 5-Gate Recovery FSM, Actuator Choke Point, HOROS-Sec, and Universal HAL."
+  currentSlug="/docs/architecture"
+  headings={headings}
+>
+  <section id="simulator-flow" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Interactive Data-Flow Simulator</h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      Explore how HOROS decouples inline mitigation (<code class="font-mono text-xs">/cmd_vel_raw → /cmd_vel_mitigated</code>) from supervisory recovery (<code class="font-mono text-xs">/cmd_vel_mitigated → /&#123;robot&#125;/safe_cmd_vel_sec</code>) and enforces hardware isolation at the Actuator Choke Point.
+    </p>
+    <InteractivePipeline />
+  </section>
+
+  <section id="risk-engine" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Deterministic Risk Score Engine (O(1) Non-AI)</h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      Implemented in <code class="font-mono text-xs">ObservableThreatDetectorNode</code>, HOROS avoids opaque neural detectors with unbounded inference latency. Instead, it fuses three orthogonal physical observables—<strong>Kinematic Divergence</strong> (<code class="font-mono text-xs">Φ_kin</code>), <strong>Message Rate Anomaly</strong> (<code class="font-mono text-xs">Φ_rate</code>, threshold 80 Hz), and <strong>Transport Jitter / Silence</strong> (<code class="font-mono text-xs">Φ_jitter</code>)—via a <strong>Bounded Dominant-Residual Algebraic t-Conorm</strong>:
+    </p>
+    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-800 dark:bg-slate-950" set:html={eqTConorm} />
+    <p class="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+      Single-vector anomalies remain mathematically weight-invariant while multi-vector stealth synergy (V11) accumulates across residual uncertainty. Dual-threshold Schmitt-trigger hysteresis latches at <code class="font-mono">Ŝ(t) ≥ 0.20</code> and clears only after sustained <code class="font-mono">Ŝ(t) &lt; 0.10</code> over an adaptive window <code class="font-mono">τ_clear ∈ [0.40s, 2.00s]</code>.
+    </p>
+  </section>
+
+  <section id="domain-1" class="space-y-5">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Domain 1: Polymorphic Mitigation &amp; Zero-Trust Sensors</h2>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/75">
+      <h3 class="text-base font-bold text-slate-900 dark:text-white">C++ Polymorphic Strategy Pattern &amp; SD-CBF</h3>
+      <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        <code class="font-mono text-xs">mitigation_engine_node</code> switches dynamically via <code class="font-mono text-xs">/horos/set_mitigation_mode</code> between <code class="font-mono text-xs">Static</code> (binary E-Stop), <code class="font-mono text-xs">Dynamic</code> (category-indexed caps), <code class="font-mono text-xs">Adaptive</code> (7D context surface), and <code class="font-mono text-xs">Bypass</code>. A <code class="font-mono text-xs">MutuallyExclusiveCallbackGroup</code> isolates control callbacks from telemetry, while a Token-Bucket limiter (<code class="font-mono text-xs">C_burst = 15.0</code>, <code class="font-mono text-xs">r_fill = 50.0 tokens/s</code>) drops floods in <code class="font-mono text-xs">O(1)</code>.
+      </p>
+      <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        At ingress, M1+M2 enforces <span class="inline-block" set:html={eqStopping} /> with closing-rate margin <span class="inline-block" set:html={eqHeff} />:
+      </p>
+      <div class="my-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-800 dark:bg-slate-950" set:html={eqSdCbf} />
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Includes Priority 0 Cliff-Edge Reverse Extrication (<code class="font-mono">d_cliff ≤ 0.48 m</code>), Step E In-Place Turnaround Authority at creep speed, and Step <code class="font-mono">B_gyro</code> Dynamic Balance Guard (<code class="font-mono">θ_crit = 16.0°</code>).
+      </p>
+    </div>
+
+    <!-- 5-Tripwire Zero-Trust Table -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/75">
+      <h3 class="text-base font-bold text-slate-900 dark:text-white">5-Tripwire Zero-Trust Sensory Architecture</h3>
+      <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">
+        Audits perception invariants every cycle and steps down across a 4-tier fallback ladder (0 Tripwires: Full Adaptive → 1 Tripwire: Dynamic Matrix Fallback → ≥2 Tripwires: Latched Protective Hold).
+      </p>
+      <div class="mt-3 overflow-x-auto">
+        <table class="w-full min-w-[540px] border-collapse text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-200 text-slate-500 uppercase dark:border-slate-800 dark:text-slate-400">
+              <th class="py-2 pr-3">ID</th>
+              <th class="px-3 py-2">Tripwire</th>
+              <th class="px-3 py-2">Plausibility Bound</th>
+              <th class="pl-3 py-2">Mitigated Attack</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {
+              ZERO_TRUST_TRIPWIRES.map((t) => (
+                <tr>
+                  <td class="py-2 pr-3 font-mono font-bold text-sky-600 dark:text-sky-400">{t.id}</td>
+                  <td class="px-3 py-2 font-semibold text-slate-900 dark:text-white">{t.name}</td>
+                  <td class="px-3 py-2 font-mono text-emerald-700 dark:text-emerald-400">{t.bound}</td>
+                  <td class="pl-3 py-2 text-slate-600 dark:text-slate-300">{t.mitigates}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Ablation Modes -->
+    <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/75">
+      <h3 class="text-base font-bold text-slate-900 dark:text-white">5-Mode Context Ablation Suite (RQ2)</h3>
+      <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
+        {
+          ABLATION_MODES.map((m) => (
+            <div class="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-950/60">
+              <p class="font-mono text-xs font-bold text-sky-600 dark:text-sky-400">{m.mode}</p>
+              <p class="mt-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400">{m.vector}</p>
+              <p class="mt-1 text-xs text-slate-700 dark:text-slate-300">{m.purpose}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section id="domain-2" class="space-y-5">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Domain 2: 6-State Recovery FSM &amp; Gates G1–G5</h2>
+
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        RECOVERY_FSM_STATES.map((st) => (
+          <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900/75">
+            <span class="font-mono text-[11px] font-bold text-amber-600 dark:text-amber-400">STATE {st.id}</span>
+            <h3 class="mt-1 font-mono text-xs font-bold text-slate-900 dark:text-white">{st.name}</h3>
+            <p class="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{st.desc}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/75">
+      <h3 class="text-base font-bold text-slate-900 dark:text-white">Tier 1: Five-Gate Verification Protocol (G1–G5)</h3>
+      <div class="mt-3 space-y-2.5">
+        {
+          RECOVERY_GATES.map((g) => (
+            <div class="flex flex-col gap-1 rounded-lg border border-slate-100 bg-slate-50/70 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-950/60">
+              <div>
+                <span class="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{g.gate} · {g.name}</span>
+                <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{g.detail}</p>
+              </div>
+              <code class="shrink-0 rounded bg-slate-200/70 px-2 py-1 font-mono text-[11px] text-slate-800 dark:bg-slate-800 dark:text-sky-300">
+                {g.rule}
+              </code>
+            </div>
+          ))
+        }
+      </div>
+      <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-800 dark:bg-slate-950" set:html={eqHermite} />
+      <p class="mt-2 text-xs text-slate-600 dark:text-slate-400">
+        <strong>Asymmetric Capability Envelope:</strong> <code class="font-mono">v_ceiling</code> collapses in <code class="font-mono">&lt; 2.0 ms</code> on hazard onset, while upward recovery requires a <code class="font-mono">250 ms</code> clean dwell integrated strictly via <code class="font-mono">std::chrono::steady_clock</code>.
+      </p>
+    </div>
+  </section>
+
+  <section id="choke-uhal" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Actuator Choke Point, HOROS-Sec &amp; Universal HAL</h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      Standard ROS 2 stacks expose motors on public <code class="font-mono text-xs">/cmd_vel</code>, allowing attackers to bypass middleware defenses. HOROS severs <code class="font-mono text-xs">/cmd_vel</code> from hardware bridges and Gazebo plugins, routing verified motion exclusively through private <code class="font-mono text-xs">/&#123;robot&#125;/safe_cmd_vel_sec</code> guarded by <strong>SROS2 enclaves</strong>, <strong>HMAC-SHA256 + 64-bit <code class="font-mono text-xs">SeqReplayWindow</code></strong>, pre-launch <strong>Ed25519 + HKDF-SHA256</strong> (<code class="font-mono text-xs">horos_boot_attest</code>), and <strong>ChaCha20-Poly1305</strong> camera privacy shedding.
+    </p>
+    <div class="grid gap-4 md:grid-cols-2">
+      {
+        UHAL_PLATFORMS.map((u) => (
+          <div class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/75">
+            <span class="font-mono text-xs font-bold text-sky-600 dark:text-sky-400">{u.adapter}</span>
+            <h3 class="mt-1 text-base font-bold text-slate-900 dark:text-white">{u.platform}</h3>
+            <dl class="mt-3 space-y-1.5 text-xs">
+              <div><dt class="inline font-semibold text-slate-500">Choke Point:</dt> <dd class="inline font-mono text-emerald-600 dark:text-emerald-400">{u.chokeTopic}</dd></div>
+              <div><dt class="inline font-semibold text-slate-500">Deployment:</dt> <dd class="inline text-slate-700 dark:text-slate-300">{u.deployment}</dd></div>
+              <div><dt class="inline font-semibold text-slate-500">Kinematics:</dt> <dd class="inline font-mono text-slate-700 dark:text-slate-300">{u.kinematics}</dd></div>
+              <div><dt class="inline font-semibold text-slate-500">Emergency Halt:</dt> <dd class="inline text-slate-700 dark:text-slate-300">{u.haltBehavior}</dd></div>
+            </dl>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section id="sd-cbf-lab" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Interactive SD-CBF Lab</h2>
+    <SdCbfSimulator />
+  </section>
+</DocsLayout>

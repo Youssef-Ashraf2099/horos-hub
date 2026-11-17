@@ -1,0 +1,80 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import { QUICKSTART_STEPS, BIBTEX_CITATION, SITE_META } from '../../data/horos';
+
+const headings = [
+  { id: 'prerequisites', label: 'Prerequisites' },
+  { id: 'steps', label: '3-Step Simulation Setup' },
+  { id: 'citation', label: 'Academic Citation' },
+  { id: 'license', label: 'License & IP' },
+];
+---
+
+<DocsLayout
+  title="Quickstart & Citation"
+  description="Step-by-step instructions to build horos_framework on ROS 2 Humble (Ubuntu 22.04), launch Gazebo cyberattack benchmarks, and cite the bachelor thesis."
+  currentSlug="/docs/quickstart"
+  headings={headings}
+>
+  <section id="prerequisites" class="space-y-3">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Prerequisites</h2>
+    <ul class="grid gap-2 text-sm text-slate-600 sm:grid-cols-2 dark:text-slate-300">
+      <li class="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+        <strong>OS:</strong> Ubuntu 22.04 LTS (x86_64 or ARM64)
+      </li>
+      <li class="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+        <strong>Middleware:</strong> ROS 2 Humble Hawksbill + <code class="font-mono text-xs">colcon</code>
+      </li>
+      <li class="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+        <strong>Simulation:</strong> Gazebo Classic / ODE Physics
+      </li>
+      <li class="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+        <strong>Languages:</strong> C++17 (<code class="font-mono text-xs">rclcpp</code>) &amp; Python 3.10+
+      </li>
+    </ul>
+  </section>
+
+  <section id="steps" class="space-y-6">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">3-Step Simulation Setup</h2>
+    {
+      QUICKSTART_STEPS.map((s) => (
+        <div class="space-y-2.5">
+          <div class="flex items-center gap-2.5">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-sky-600 font-mono text-xs font-bold text-white">
+              {s.step}
+            </span>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">{s.title}</h3>
+          </div>
+          <p class="text-sm text-slate-600 dark:text-slate-300">{s.description}</p>
+          <CodeBlock code={s.code} label={`Step ${s.step} · bash`} />
+        </div>
+      ))
+    }
+  </section>
+
+  <section id="citation" class="space-y-4">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Academic Citation</h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      Conceived and developed as a Bachelor of Science thesis in Computer Science at the{' '}
+      <strong>{SITE_META.institution}</strong> under the supervision of{' '}
+      <strong>{SITE_META.supervisors.join(' and ')}</strong>.
+    </p>
+    <CodeBlock code={BIBTEX_CITATION} label="citation.bib" lang="bibtex" wrap={true} />
+  </section>
+
+  <section id="license" class="space-y-3">
+    <h2 class="text-2xl font-bold text-slate-900 dark:text-white">License &amp; Intellectual Property</h2>
+    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+      Copyright © 2026–present <strong>{SITE_META.authorName}</strong>. Released under the{' '}
+      <a
+        href={`${SITE_META.repoUrl}/blob/main/LICENSE`}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="font-semibold text-sky-600 underline dark:text-sky-400"
+      >
+        Apache License 2.0
+      </a>. All intellectual property, architectural design, and ongoing code contributions are solely and exclusively owned by the author.
+    </p>
+  </section>
+</DocsLayout>

@@ -1,0 +1,680 @@
+---
+import { Play, Pause, Cpu, ShieldCheck, Activity, Lock } from '@lucide/astro';
+---
+
+<div
+  class="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900/85"
+>
+  <!-- Header & Controls -->
+  <div class="flex flex-col gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-center lg:justify-between dark:border-slate-800">
+    <div>
+      <span class="text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+        Interactive Cyber-Physical Data-Flow Simulator
+      </span>
+      <h3 class="mt-0.5 text-lg font-bold text-slate-900 dark:text-white">
+        Live ROS 2 Pipeline, Choke Point &amp; Recovery Telemetry
+      </h3>
+      <p class="mt-0.5 text-xs text-slate-600 dark:text-slate-400">
+        Inject live cyberattacks, toggle <code class="font-mono">composed:=auto</code> deployment, and click any node to inspect its <code class="font-mono">TECH-DOC</code> internals.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Topology Toggle -->
+      <div class="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-950">
+        <button
+          type="button"
+          data-topo="go2"
+          class="topo-btn rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-900 shadow-xs transition dark:bg-sky-600 dark:text-white"
+        >
+          Go2 · Decoupled FFI (2 PIDs)
+        </button>
+        <button
+          type="button"
+          data-topo="yanshee"
+          class="topo-btn rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+        >
+          YanShee · Composed (-42% RAM)
+        </button>
+      </div>
+
+      <button
+        id="sim-play-toggle"
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+      >
+        <Pause id="sim-pause-icon" class="h-3.5 w-3.5 text-sky-500" />
+        <Play id="sim-play-icon" class="hidden h-3.5 w-3.5 text-emerald-500" />
+        <span id="sim-play-label">Live</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scenario Buttons -->
+  <div class="mt-4 flex flex-wrap items-center gap-2">
+    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Simulate Event:</span>
+    <button
+      type="button"
+      data-scenario="nominal"
+      class="scenario-btn rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-800 transition dark:text-emerald-300"
+    >
+      Nominal Patrol
+    </button>
+    <button
+      type="button"
+      data-scenario="surge"
+      class="scenario-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-rose-500/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    >
+      V1a Surge (+3.0 m/s)
+    </button>
+    <button
+      type="button"
+      data-scenario="flood"
+      class="scenario-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-amber-500/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    >
+      V2 Flood DoS (400 Hz)
+    </button>
+    <button
+      type="button"
+      data-scenario="bypass"
+      class="scenario-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-rose-500/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    >
+      /cmd_vel Bypass Trap
+    </button>
+    <button
+      type="button"
+      data-scenario="rocking"
+      class="scenario-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-500/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+    >
+      V12 Biped ZMP Rocking
+    </button>
+  </div>
+
+  <!-- Live Animated SVG Pipeline Canvas -->
+  <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-2 sm:p-3 dark:border-slate-800">
+    <svg
+      id="horos-flow-svg"
+      viewBox="0 0 920 350"
+      class="h-auto w-full select-none"
+      role="img"
+      aria-label="Interactive animated HOROS ROS 2 data flow simulation"
+    >
+      <defs>
+        <pattern id="sim-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+          <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(148,163,184,0.08)" stroke-width="1" />
+        </pattern>
+        <filter id="glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <!-- Background Grid -->
+      <rect width="920" height="350" fill="#060B16" rx="12" />
+      <rect width="920" height="350" fill="url(#sim-grid)" rx="12" />
+
+      <!-- Composed Container Halo (Visible in YanShee Composed Mode) -->
+      <rect
+        id="composed-container-box"
+        x="266"
+        y="42"
+        width="378"
+        height="156"
+        rx="14"
+        fill="rgba(16, 185, 129, 0.06)"
+        stroke="#10B981"
+        stroke-width="1.5"
+        stroke-dasharray="5 4"
+        opacity="0"
+      />
+      <text
+        id="composed-container-label"
+        x="455"
+        y="58"
+        text-anchor="middle"
+        fill="#34D399"
+        font-size="10"
+        font-family="monospace"
+        font-weight="700"
+        opacity="0"
+      >
+        horos_composed_pipeline (Single PID · std::unique_ptr Zero-Copy · 61.80 MB)
+      </text>
+
+      <!-- Main Data Bus Paths -->
+      <!-- 1. Planner -> Ingress -->
+      <path d="M 155 112 L 278 112" stroke="#1E293B" stroke-width="3" fill="none" />
+      <text x="216" y="102" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="monospace">/cmd_vel_raw</text>
+
+      <!-- 2. Domain 1 -> Domain 2 -->
+      <path id="path-d1-d2" d="M 432 112 L 486 112" stroke="#1E293B" stroke-width="3" fill="none" />
+      <text id="label-d1-d2" x="459" y="101" text-anchor="middle" fill="#38BDF8" font-size="8.5" font-family="monospace">SHM+HMAC</text>
+
+      <!-- 3. Domain 2 -> Choke Point -->
+      <path d="M 632 112 L 680 112" stroke="#1E293B" stroke-width="3" fill="none" />
+
+      <!-- 4. Choke Point -> U-HAL Motors -->
+      <path d="M 762 112 L 800 112" stroke="#1E293B" stroke-width="3" fill="none" />
+      <text id="label-choke-topic" x="780" y="100" text-anchor="middle" fill="#34D399" font-size="8" font-family="monospace">_sec</text>
+
+      <!-- 5. Bypass Trap Path (Rogue Attacker -> Choke Shield) -->
+      <path
+        id="path-bypass-trap"
+        d="M 92 152 C 92 225, 720 225, 720 154"
+        stroke="#4C1D24"
+        stroke-width="2"
+        stroke-dasharray="4 4"
+        fill="none"
+      />
+      <text x="415" y="216" text-anchor="middle" fill="#FB7185" font-size="9" font-family="monospace">
+        Untrusted /cmd_vel Direct Bypass Attempt ➔ Severed at Choke Point
+      </text>
+
+      <!-- 6. Perception & Risk Feedback Loop -->
+      <path d="M 845 154 L 845 275 L 558 275" stroke="#1E293B" stroke-width="2.2" fill="none" />
+      <path d="M 405 275 L 355 275 L 355 156" stroke="#1E293B" stroke-width="2.2" fill="none" />
+      <path d="M 558 275 L 558 156" stroke="#1E293B" stroke-width="2.2" fill="none" />
+      <path d="M 216 112 L 216 275 L 250 275" stroke="#1E293B" stroke-width="2.2" fill="none" />
+      <text x="695" y="267" text-anchor="middle" fill="#64748B" font-size="8.5" font-family="monospace">/scan · /imu/data · /odom</text>
+
+      <!-- Animated Packet Container (populated by JS) -->
+      <g id="sim-packets-layer"></g>
+
+      <!-- NODE 1: Planner + Attack Surface -->
+      <g class="sim-node cursor-pointer" data-node="ingress">
+        <rect x="24" y="72" width="132" height="80" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5" />
+        <text x="90" y="92" text-anchor="middle" fill="#38BDF8" font-size="9" font-family="monospace" font-weight="700">INGRESS / ATTACK</text>
+        <text x="90" y="110" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="700">nominal_driver</text>
+        <text x="90" y="126" text-anchor="middle" fill="#94A3B8" font-size="9">+ attack_injector</text>
+        <rect id="badge-ingress" x="44" y="134" width="92" height="13" rx="6" fill="#064E3B" />
+        <text id="text-ingress" x="90" y="143" text-anchor="middle" fill="#6EE7B7" font-size="8" font-family="monospace">20 Hz · 0.35 m/s</text>
+      </g>
+
+      <!-- NODE 2: Domain 1 Mitigation Engine -->
+      <g class="sim-node cursor-pointer" data-node="mitigation">
+        <rect id="box-mitigation" x="278" y="70" width="154" height="86" rx="10" fill="#0F172A" stroke="#0EA5E9" stroke-width="2" />
+        <text x="355" y="89" text-anchor="middle" fill="#38BDF8" font-size="9" font-family="monospace" font-weight="700">DOMAIN 1 · SHIELD</text>
+        <text x="355" y="106" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="700">mitigation_engine</text>
+        <text x="355" y="121" text-anchor="middle" fill="#94A3B8" font-size="8.5">SD-CBF · Bucket · B_gyro</text>
+        <rect id="badge-mitigation" x="292" y="132" width="126" height="16" rx="6" fill="#0C4A6E" />
+        <text id="text-mitigation" x="355" y="143" text-anchor="middle" fill="#7DD3FC" font-size="8" font-family="monospace">ADAPTIVE · PASS</text>
+      </g>
+
+      <!-- Dropped Flood Packets Indicator -->
+      <g id="flood-drop-indicator" opacity="0">
+        <circle cx="278" cy="70" r="14" fill="#881337" stroke="#FB7185" stroke-width="1.5" />
+        <text x="278" y="73" text-anchor="middle" fill="#FFE4E6" font-size="7.5" font-family="monospace" font-weight="700">DROP</text>
+      </g>
+
+      <!-- NODE 3: Domain 2 Recovery Engine -->
+      <g class="sim-node cursor-pointer" data-node="recovery">
+        <rect id="box-recovery" x="486" y="70" width="146" height="86" rx="10" fill="#0F172A" stroke="#F59E0B" stroke-width="1.8" />
+        <text x="559" y="89" text-anchor="middle" fill="#FBBF24" font-size="9" font-family="monospace" font-weight="700">DOMAIN 2 · HEALER</text>
+        <text x="559" y="106" text-anchor="middle" fill="#F8FAFC" font-size="11" font-weight="700">recovery_engine</text>
+        <text x="559" y="121" text-anchor="middle" fill="#94A3B8" font-size="8.5">6-FSM · G1–G5 · S-Curve</text>
+        <rect id="badge-recovery" x="498" y="132" width="122" height="16" rx="6" fill="#064E3B" />
+        <text id="text-recovery" x="559" y="143" text-anchor="middle" fill="#6EE7B7" font-size="8" font-family="monospace">NORMAL · Φ=PASS</text>
+      </g>
+
+      <!-- NODE 4: Actuator Choke Point -->
+      <g class="sim-node cursor-pointer" data-node="chokepoint">
+        <rect id="box-chokepoint" x="680" y="72" width="82" height="80" rx="10" fill="#082F49" stroke="#10B981" stroke-width="2" />
+        <text x="721" y="92" text-anchor="middle" fill="#34D399" font-size="8.5" font-family="monospace" font-weight="700">CHOKE</text>
+        <text x="721" y="108" text-anchor="middle" fill="#F8FAFC" font-size="10" font-weight="700">Safety Gate</text>
+        <text x="721" y="123" text-anchor="middle" fill="#7DD3FC" font-size="8">HMAC+Seq</text>
+        <text id="text-chokepoint" x="721" y="140" text-anchor="middle" fill="#6EE7B7" font-size="8" font-family="monospace">VERIFIED</text>
+      </g>
+
+      <!-- NODE 5: U-HAL & Robot Actuators -->
+      <g class="sim-node cursor-pointer" data-node="uhal">
+        <rect x="800" y="72" width="96" height="80" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5" />
+        <text x="848" y="92" text-anchor="middle" fill="#34D399" font-size="8.5" font-family="monospace" font-weight="700">U-HAL</text>
+        <text id="text-uhal-bot" x="848" y="110" text-anchor="middle" fill="#F8FAFC" font-size="10.5" font-weight="700">Unitree Go2</text>
+        <text id="text-uhal-mode" x="848" y="125" text-anchor="middle" fill="#94A3B8" font-size="8">Go2Adapter</text>
+        <text id="text-uhal-vel" x="848" y="142" text-anchor="middle" fill="#38BDF8" font-size="8.5" font-family="monospace">0.35 m/s</text>
+      </g>
+
+      <!-- NODE 6: Risk Score & Context Awareness -->
+      <g class="sim-node cursor-pointer" data-node="context">
+        <rect x="250" y="242" width="308" height="68" rx="10" fill="#0F172A" stroke="#6366F1" stroke-width="1.6" />
+        <text x="404" y="261" text-anchor="middle" fill="#818CF8" font-size="9" font-family="monospace" font-weight="700">
+          OBSERVABILITY &amp; ZERO-TRUST SENSORS
+        </text>
+        <text x="404" y="278" text-anchor="middle" fill="#F8FAFC" font-size="10.5" font-weight="700">
+          ObservableThreatDetector (t-Conorm) + context_awareness
+        </text>
+        <text id="text-context-bar" x="404" y="296" text-anchor="middle" fill="#A5B4FC" font-size="8.5" font-family="monospace">
+          S(t) = 0.00 · d_min = 1.65 m · θ_tilt = 1.2° · 5 Tripwires OK
+        </text>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Live Telemetry HUD -->
+  <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/70">
+      <div class="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        <span>Recovery FSM State</span>
+        <Activity class="h-3.5 w-3.5 text-sky-500" />
+      </div>
+      <p id="hud-fsm" class="mt-1 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+        0. NORMAL_OPERATION
+      </p>
+      <div class="mt-1.5 flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+        <span>Gates:</span>
+        <span id="gate-g1" class="rounded bg-emerald-500/20 px-1 text-emerald-700 dark:text-emerald-300">G1</span>
+        <span id="gate-g2" class="rounded bg-emerald-500/20 px-1 text-emerald-700 dark:text-emerald-300">G2</span>
+        <span id="gate-g3" class="rounded bg-emerald-500/20 px-1 text-emerald-700 dark:text-emerald-300">G3</span>
+        <span id="gate-g4" class="rounded bg-emerald-500/20 px-1 text-emerald-700 dark:text-emerald-300">G4</span>
+        <span id="gate-g5" class="rounded bg-emerald-500/20 px-1 text-emerald-700 dark:text-emerald-300">G5</span>
+      </div>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/70">
+      <div class="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        <span>Risk Score Ŝ(t) · t-Conorm</span>
+        <ShieldCheck class="h-3.5 w-3.5 text-amber-500" />
+      </div>
+      <p id="hud-risk" class="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-white">
+        0.00 (Nominal)
+      </p>
+      <p id="hud-indicators" class="mt-1 font-mono text-[10px] text-slate-500 dark:text-slate-400">
+        Φ_kin=0.00 · Φ_rate=0.00 · Φ_jit=0.00
+      </p>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/70">
+      <div class="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        <span>Actuator Velocity &amp; Posture</span>
+        <Cpu class="h-3.5 w-3.5 text-emerald-500" />
+      </div>
+      <p id="hud-vel" class="mt-1 font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
+        0.35 → 0.35 m/s
+      </p>
+      <p id="hud-posture" class="mt-1 font-mono text-[10px] text-slate-500 dark:text-slate-400">
+        θ_tilt = 1.2° · d_min = 1.65 m
+      </p>
+    </div>
+
+    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/70">
+      <div class="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        <span>Deployment &amp; Crypto</span>
+        <Lock class="h-3.5 w-3.5 text-sky-500" />
+      </div>
+      <p id="hud-deploy" class="mt-1 font-mono text-xs font-bold text-sky-600 dark:text-sky-400">
+        Decoupled FFI (51.6 MB)
+      </p>
+      <p id="hud-latency" class="mt-1 font-mono text-[10px] text-slate-500 dark:text-slate-400">
+        C++ Kernel: 18.4 µs · HMAC-SHA256
+      </p>
+    </div>
+  </div>
+
+  <!-- Clickable Node Deep-Inspector -->
+  <div class="mt-4 rounded-xl border border-sky-500/25 bg-sky-50/40 p-4 dark:border-sky-500/25 dark:bg-slate-950/80">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <span id="node-insp-tag" class="font-mono text-[11px] font-bold text-sky-700 uppercase dark:text-sky-400">
+        Click any block above · Domain 1 Inline Shield
+      </span>
+      <span id="node-insp-pkg" class="rounded bg-slate-200/80 px-2 py-0.5 font-mono text-[10px] text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+        horos_mitigation_engine (C++17)
+      </span>
+    </div>
+    <h4 id="node-insp-title" class="mt-1 text-sm font-bold text-slate-900 dark:text-white">
+      mitigation_engine_node — Polymorphic Strategy &amp; SD-CBF Clamp
+    </h4>
+    <p id="node-insp-desc" class="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+      Sits in a MutuallyExclusive control callback group on /cmd_vel_raw. Runs O(1) Token-Bucket limiting (C_burst=15, r_fill=50/s), M1 ingress clamping, M2 closing-rate SD-CBF, Priority 0 cliff-edge reverse extrication, 5-Tripwire Zero-Trust sensory fallback, and Step B_gyro postural protection.
+    </p>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const layer = document.getElementById('sim-packets-layer');
+    if (!layer) return;
+
+    let scenario = 'nominal';
+    let topo = 'go2';
+    let playing = true;
+    let tick = 0;
+
+    const scenarioConfigs = {
+      nominal: {
+        label: 'Nominal Patrol',
+        ingressText: '20 Hz · 0.35 m/s',
+        mitBadge: 'ADAPTIVE · PASS',
+        recBadge: 'NORMAL · Φ=PASS',
+        chokeText: 'VERIFIED',
+        fsm: '0. NORMAL_OPERATION',
+        risk: '0.00 (Nominal)',
+        indicators: 'Φ_kin=0.00 · Φ_rate=0.00 · Φ_jit=0.00',
+        vel: '0.35 → 0.35 m/s',
+        posture: 'θ_tilt = 1.2° · d_min = 1.65 m',
+        contextBar: 'S(t) = 0.00 · d_min = 1.65 m · θ_tilt = 1.2° · 5 Tripwires OK',
+        gates: [true, true, true, true, true],
+        inColor: '#38BDF8',
+        midColor: '#10B981',
+        outColor: '#10B981',
+        spawnRate: 0.09,
+        dropFlood: false,
+        bypassActive: false,
+      },
+      surge: {
+        label: 'V1a Surge (+3.0 m/s)',
+        ingressText: 'SURGE +3.0 m/s',
+        mitBadge: 'M1+M2 SD-CBF CLAMP',
+        recBadge: 'PHASED · S-CURVE',
+        chokeText: 'VERIFIED',
+        fsm: '4. PHASED_RECOVERY (3τ²-2τ³)',
+        risk: '0.88 (Critical)',
+        indicators: 'Φ_kin=0.88 · Φ_rate=0.00 · Φ_jit=0.00',
+        vel: '+3.00 → 0.35 m/s',
+        posture: 'θ_tilt = 2.4° · d_min = 0.72 m',
+        contextBar: 'S(t) = 0.88 · SD-CBF Ceiling Active · Anti-Replay Purged',
+        gates: [true, true, true, true, true],
+        inColor: '#F43F5E',
+        midColor: '#F59E0B',
+        outColor: '#10B981',
+        spawnRate: 0.14,
+        dropFlood: false,
+        bypassActive: false,
+      },
+      flood: {
+        label: 'V2 Flood DoS (400 Hz)',
+        ingressText: '400 Hz FLOOD',
+        mitBadge: 'BUCKET DROP O(1)',
+        recBadge: 'PROTECTIVE HOLD',
+        chokeText: 'VERIFIED',
+        fsm: '2. PROTECTIVE_RESPONSE',
+        risk: '0.80 (Flooding)',
+        indicators: 'Φ_kin=0.00 · Φ_rate=0.80 · Φ_jit=0.00',
+        vel: '400 Hz → 50 Hz Safe',
+        posture: 'C_burst=15.0 · r_fill=50.0/s',
+        contextBar: 'S(t) = 0.80 · Excess 350 Hz Frames Dropped in O(1)',
+        gates: [false, true, true, true, true],
+        inColor: '#F43F5E',
+        midColor: '#38BDF8',
+        outColor: '#10B981',
+        spawnRate: 0.42,
+        dropFlood: true,
+        bypassActive: false,
+      },
+      bypass: {
+        label: '/cmd_vel Bypass Trap',
+        ingressText: 'ROGUE /cmd_vel',
+        mitBadge: 'UPSTREAM GUARD',
+        recBadge: 'CHOKE LOCKED',
+        chokeText: 'BLOCKED',
+        fsm: '3. VERIFICATION (G1–G5)',
+        risk: '0.74 (Origin Spoof)',
+        indicators: 'Unauthorized /cmd_vel Blocked at Choke Point',
+        vel: 'Rogue 2.5 → 0.00 m/s',
+        posture: 'SROS2 Enclave + HMAC-SHA256 Enforced',
+        contextBar: 'Public /cmd_vel Severed · Only /{robot}/safe_cmd_vel_sec Admitted',
+        gates: [true, true, true, false, true],
+        inColor: '#F43F5E',
+        midColor: '#F59E0B',
+        outColor: '#10B981',
+        spawnRate: 0.12,
+        dropFlood: false,
+        bypassActive: true,
+      },
+      rocking: {
+        label: 'V12 Biped ZMP Rocking',
+        ingressText: '10 rad/s ROCKING',
+        mitBadge: 'STEP B_gyro DAMP',
+        recBadge: 'CROUCH BALANCE',
+        chokeText: 'VERIFIED',
+        fsm: '2. PROTECTIVE_RESPONSE',
+        risk: '0.91 (ZMP Hazard)',
+        indicators: 'θ_tilt > 16° Guard · ω_gyro Damped',
+        vel: '0.15 → 0.00 m/s',
+        posture: 'θ_tilt = 3.1° (0% Falls · 15° Flex)',
+        contextBar: 'Step B_gyro Active · YansheeActuatorAdapter.execute_crouch_balance()',
+        gates: [false, true, false, true, true],
+        inColor: '#F43F5E',
+        midColor: '#F59E0B',
+        outColor: '#10B981',
+        spawnRate: 0.16,
+        dropFlood: false,
+        bypassActive: false,
+      },
+    };
+
+    const nodeDocs = {
+      ingress: {
+        tag: 'Ingress & Threat Surface',
+        pkg: 'horos_attack_injector (Python)',
+        title: 'nominal_driver & attack_injector_node',
+        desc: 'nominal_driver_node publishes clean 20 Hz motion plans onto /cmd_vel_nominal. During evaluation, attack_injector_node injects Tier I–III cyberattacks (V1a–V12) onto /cmd_vel_raw without modifying downstream safety gateways.',
+      },
+      mitigation: {
+        tag: 'Domain 1 · Inline Mitigation Engine',
+        pkg: 'horos_mitigation_engine (C++17)',
+        title: 'mitigation_engine_node — Polymorphic Strategy & SD-CBF',
+        desc: 'Executes in a MutuallyExclusive control callback group: O(1) Token-Bucket rate limiting (15.0 / 50.0 tokens/s), M1 ingress clamping, M2 closing-rate SD-CBF, Priority 0 cliff-edge reverse extrication, 5-Tripwire Zero-Trust sensory fallback, and Step B_gyro balance guard.',
+      },
+      recovery: {
+        tag: 'Domain 2 · Autonomous Recovery Engine',
+        pkg: 'horos_recovery_engine (C++17)',
+        title: 'recovery_engine_node — 6-State FSM & Gates G1–G5',
+        desc: 'Supervises post-attack restoration via 5 non-negotiable gates (Quiescence, 10-tick Spatial Clearance, Postural Equilibrium, 64-bit Anti-Replay Purge, Async SHA-256 Gate G5 IntegrityVerifier), Asymmetric Capability Envelope (<2 ms collapse), and Cubic Hermite S-curve ramp.',
+      },
+      chokepoint: {
+        tag: 'Area 4 · Enforced Actuator Choke Point',
+        pkg: 'horos_security + SROS2 Enclave',
+        title: 'Command Safety Gate — Private /{robot}/safe_cmd_vel_sec',
+        desc: 'Motors and Gazebo planar_move plugins are severed from public /cmd_vel. Only the Recovery Engine holds SROS2 publish credentials and HMAC-SHA256 + monotonic seq_num signing keys for the private choke point topic.',
+      },
+      uhal: {
+        tag: 'Universal Hardware Abstraction Layer (U-HAL)',
+        pkg: 'horos_hal (C++ Header-Only)',
+        title: 'IActuatorBridge — Go2 & YanShee Plant Adapters',
+        desc: 'Decouples cyber-defense math from robot kinematics. Go2ActuatorAdapter runs continuous 50 Hz velocity streaming (0.05s lag, 4-limb squat halt). YansheeActuatorAdapter quantizes 0.80s gait steps (0.60s lag) and triggers a 15° flexed double-support crouch balance on halt.',
+      },
+      context: {
+        tag: 'Observability & Zero-Trust Context',
+        pkg: 'horos_attack_injector + horos_simulation',
+        title: 'ObservableThreatDetector (t-Conorm) & context_awareness_node',
+        desc: 'Deterministic non-AI Risk Score Engine computes Φ_kin, Φ_rate, Φ_jitter fused via Bounded Dominant-Residual t-Conorm (w = [0.40, 0.35, 0.25]) with Schmitt hysteresis (0.20 latch / 0.10 clear). context_awareness_node signs 5D+Postural RobotContext packets via HMAC-SHA256.',
+      },
+    };
+
+    const particles = [];
+
+    function applyUI() {
+      const cfg = scenarioConfigs[scenario];
+      const isComposed = topo === 'yanshee';
+
+      document.getElementById('text-ingress').textContent = cfg.ingressText;
+      document.getElementById('text-mitigation').textContent = cfg.mitBadge;
+      document.getElementById('text-recovery').textContent = cfg.recBadge;
+      document.getElementById('text-chokepoint').textContent = cfg.chokeText;
+      document.getElementById('text-context-bar').textContent = cfg.contextBar;
+
+      document.getElementById('hud-fsm').textContent = cfg.fsm;
+      document.getElementById('hud-risk').textContent = cfg.risk;
+      document.getElementById('hud-indicators').textContent = cfg.indicators;
+      document.getElementById('hud-vel').textContent = cfg.vel;
+      document.getElementById('hud-posture').textContent = cfg.posture;
+
+      cfg.gates.forEach((ok, idx) => {
+        const el = document.getElementById(`gate-g${idx + 1}`);
+        if (!el) return;
+        el.className = ok
+          ? 'rounded bg-emerald-500/20 px-1 text-emerald-700 dark:text-emerald-300'
+          : 'rounded bg-rose-500/20 px-1 text-rose-700 dark:text-rose-300';
+      });
+
+      document.getElementById('flood-drop-indicator').setAttribute('opacity', cfg.dropFlood ? '1' : '0');
+
+      const compBox = document.getElementById('composed-container-box');
+      const compLbl = document.getElementById('composed-container-label');
+      const d1d2Lbl = document.getElementById('label-d1-d2');
+
+      if (isComposed) {
+        compBox.setAttribute('opacity', '1');
+        compLbl.setAttribute('opacity', '1');
+        d1d2Lbl.textContent = 'unique_ptr';
+        document.getElementById('text-uhal-bot').textContent = 'UBTech YanShee';
+        document.getElementById('text-uhal-mode').textContent = 'YansheeAdapter';
+        document.getElementById('text-uhal-vel').textContent = scenario === 'rocking' ? '0.00 m/s' : '0.08 m/s';
+        document.getElementById('hud-deploy').textContent = 'Composed 1 PID (61.80 MB, -42%)';
+        document.getElementById('hud-latency').textContent = 'RPi 3B+ Kernel: 9.85 µs · <10 µs IPC';
+      } else {
+        compBox.setAttribute('opacity', '0');
+        compLbl.setAttribute('opacity', '0');
+        d1d2Lbl.textContent = 'SHM+HMAC';
+        document.getElementById('text-uhal-bot').textContent = 'Unitree Go2';
+        document.getElementById('text-uhal-mode').textContent = 'Go2Adapter';
+        document.getElementById('text-uhal-vel').textContent = scenario === 'bypass' ? '0.00 m/s' : '0.35 m/s';
+        document.getElementById('hud-deploy').textContent = 'Decoupled 2 PIDs (ASIL-D FFI)';
+        document.getElementById('hud-latency').textContent = 'Orin/x86 Kernel: 18.4 µs · Hop HMAC';
+      }
+    }
+
+    function spawnParticle(lane, color, speed) {
+      const circle = document.createElementNS(svgNS, 'circle');
+      circle.setAttribute('r', lane === 'drop' ? '3.5' : '4.2');
+      circle.setAttribute('fill', color);
+      circle.setAttribute('filter', 'url(#glow-cyan)');
+      layer.appendChild(circle);
+      particles.push({ el: circle, lane, t: 0, speed, color });
+    }
+
+    function pointOnLane(lane, t) {
+      if (lane === 'in') return { x: 156 + t * 122, y: 112 };
+      if (lane === 'mid') return { x: 432 + t * 54, y: 112 };
+      if (lane === 'out') return { x: 632 + t * 48, y: 112 };
+      if (lane === 'uhal') return { x: 762 + t * 38, y: 112 };
+      if (lane === 'drop') return { x: 274 - t * 18, y: 100 - t * 36 };
+      if (lane === 'bypass') {
+        // Bezier approximation along bypass trap toward choke point
+        const x = 92 + t * 610;
+        const y = 152 + Math.sin(t * Math.PI) * 58;
+        return { x, y };
+      }
+      if (lane === 'fb') {
+        // Feedback from UHAL -> Context -> Mitigation
+        if (t < 0.35) {
+          const u = t / 0.35;
+          return { x: 845, y: 154 + u * 121 };
+        }
+        if (t < 0.75) {
+          const u = (t - 0.35) / 0.4;
+          return { x: 845 - u * 490, y: 275 };
+        }
+        const u = (t - 0.75) / 0.25;
+        return { x: 355, y: 275 - u * 119 };
+      }
+      return { x: 0, y: 0 };
+    }
+
+    function animate() {
+      if (playing) {
+        tick += 1;
+        const cfg = scenarioConfigs[scenario];
+
+        if (Math.random() < cfg.spawnRate) {
+          spawnParticle('in', cfg.inColor, cfg.dropFlood ? 0.036 : 0.022);
+          if (cfg.dropFlood && Math.random() < 0.7) {
+            spawnParticle('drop', '#FB7185', 0.045);
+          }
+        }
+        if (tick % 24 === 0) {
+          spawnParticle('mid', cfg.midColor, topo === 'yanshee' ? 0.055 : 0.032);
+        }
+        if (tick % 26 === 8) {
+          spawnParticle('out', cfg.outColor, 0.038);
+          spawnParticle('uhal', '#34D399', 0.042);
+        }
+        if (tick % 40 === 0) {
+          spawnParticle('fb', '#818CF8', 0.015);
+        }
+        if (cfg.bypassActive && tick % 28 === 0) {
+          spawnParticle('bypass', '#F43F5E', 0.02);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i -= 1) {
+          const p = particles[i];
+          p.t += p.speed;
+          if (p.t >= 1) {
+            p.el.remove();
+            particles.splice(i, 1);
+            continue;
+          }
+          const pt = pointOnLane(p.lane, p.t);
+          p.el.setAttribute('cx', pt.x.toFixed(1));
+          p.el.setAttribute('cy', pt.y.toFixed(1));
+          if (p.lane === 'drop' || (p.lane === 'bypass' && p.t > 0.82)) {
+            p.el.setAttribute('opacity', String(Math.max(0, 1 - (p.t - 0.2))));
+          }
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // Scenario buttons
+    document.querySelectorAll('.scenario-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        scenario = btn.getAttribute('data-scenario') || 'nominal';
+        if (scenario === 'rocking' && topo !== 'yanshee') {
+          topo = 'yanshee';
+          syncTopoButtons();
+        }
+        document.querySelectorAll('.scenario-btn').forEach((b) => {
+          b.className = 'scenario-btn rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-sky-500/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200';
+        });
+        btn.className = 'scenario-btn rounded-lg border border-sky-500/50 bg-sky-500/15 px-3 py-1.5 text-xs font-semibold text-sky-700 transition dark:text-sky-300';
+        applyUI();
+      });
+    });
+
+    function syncTopoButtons() {
+      document.querySelectorAll('.topo-btn').forEach((b) => {
+        const active = b.getAttribute('data-topo') === topo;
+        b.className = active
+          ? 'topo-btn rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-900 shadow-xs transition dark:bg-sky-600 dark:text-white'
+          : 'topo-btn rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white';
+      });
+    }
+
+    document.querySelectorAll('.topo-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        topo = btn.getAttribute('data-topo') || 'go2';
+        syncTopoButtons();
+        applyUI();
+      });
+    });
+
+    const playBtn = document.getElementById('sim-play-toggle');
+    playBtn?.addEventListener('click', () => {
+      playing = !playing;
+      document.getElementById('sim-pause-icon')?.classList.toggle('hidden', !playing);
+      document.getElementById('sim-play-icon')?.classList.toggle('hidden', playing);
+      const lbl = document.getElementById('sim-play-label');
+      if (lbl) lbl.textContent = playing ? 'Live' : 'Paused';
+    });
+
+    // Node Click Inspector
+    document.querySelectorAll('.sim-node').forEach((g) => {
+      g.addEventListener('click', () => {
+        const key = g.getAttribute('data-node');
+        const info = key ? nodeDocs[key] : null;
+        if (!info) return;
+        document.getElementById('node-insp-tag').textContent = info.tag;
+        document.getElementById('node-insp-pkg').textContent = info.pkg;
+        document.getElementById('node-insp-title').textContent = info.title;
+        document.getElementById('node-insp-desc').textContent = info.desc;
+      });
+    });
+
+    applyUI();
+    requestAnimationFrame(animate);
+  })();
+</script>

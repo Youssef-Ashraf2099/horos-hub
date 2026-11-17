@@ -1,0 +1,659 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import InteractivePipeline from '../components/InteractivePipeline.astro';
+import SdCbfSimulator from '../components/SdCbfSimulator.astro';
+import ThreatMatrix from '../components/ThreatMatrix.astro';
+import BenchmarkVisualizer from '../components/BenchmarkVisualizer.astro';
+import CodeBlock from '../components/CodeBlock.astro';
+import {
+  SITE_META,
+  HERO_BADGES,
+  KEY_HIGHLIGHTS,
+  COMPARISON_PARADIGMS,
+  HARDWARE_TESTBEDS,
+  QUICKSTART_STEPS,
+  BIBTEX_CITATION,
+} from '../data/horos';
+import { withBase } from '../utils/url';
+import { renderKatex } from '../utils/math';
+import GitHubIcon from '../components/GitHubIcon.astro';
+import LinkedInIcon from '../components/LinkedInIcon.astro';
+import {
+  ShieldCheck,
+  RefreshCw,
+  ArrowRight,
+  BookOpen,
+  Cpu,
+  GraduationCap,
+  CircleCheck,
+  TriangleAlert,
+  OctagonX,
+  Scale,
+  Globe,
+  User,
+  ExternalLink,
+} from '@lucide/astro';
+
+const eqStopping = renderKatex(String.raw`v T_s + \frac{v^2}{2 a_{\text{phys}}} \le h_{\text{eff}}`, false);
+const eqSdCbf = renderKatex(
+  String.raw`v_{\text{SD-CBF}}(h_{\text{eff}}) = \sqrt{(a_{\text{phys}} T_s)^2 + 2 a_{\text{phys}} h_{\text{eff}}} - a_{\text{phys}} T_s`,
+  true
+);
+const eqHeff = renderKatex(
+  String.raw`h_{\text{eff}} = (d_{\min} - d_{\text{crit}}) - v_{\text{obs,closing}} T_{\text{pred}}`,
+  false
+);
+const eqDeadReckon = renderKatex(
+  String.raw`\hat{d}_{\text{DR}}(t) = \max\left(0,\; d_{\text{trusted}} - (v_{\text{act}} + 0.05)\Delta t_{\text{quar}}\right)`,
+  false
+);
+---
+
+<BaseLayout title={SITE_META.title} description={SITE_META.description}>
+  <!-- Hero Section -->
+  <section class="relative overflow-hidden border-b border-slate-200/80 bg-cyber-grid dark:border-slate-800/80">
+    <div class="hero-radial-glow pointer-events-none absolute inset-0"></div>
+    <div class="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
+      <div class="grid items-center gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+        <div>
+          <!-- Badges -->
+          <div class="flex flex-wrap gap-2">
+            {
+              HERO_BADGES.map((b) => {
+                const badgeTone =
+                  b.tone === 'blue'
+                    ? 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300'
+                    : b.tone === 'amber'
+                      ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                      : b.tone === 'emerald'
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                        : b.tone === 'orange'
+                          ? 'border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-300'
+                          : 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300';
+
+                return b.href ? (
+                  <a
+                    href={b.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition hover:opacity-85 ${badgeTone}`}
+                  >
+                    <span class="opacity-75">{b.label}:</span>
+                    <span class="font-semibold">{b.value}</span>
+                  </a>
+                ) : (
+                  <span class={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${badgeTone}`}>
+                    <span class="opacity-75">{b.label}:</span>
+                    <span class="font-semibold">{b.value}</span>
+                  </span>
+                );
+              })
+            }
+          </div>
+
+          <h1 class="mt-6 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1] dark:text-white">
+            HOROS Framework
+            <span class="mt-2 block bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
+              {SITE_META.tagline}
+            </span>
+          </h1>
+
+          <blockquote class="mt-6 border-l-4 border-sky-500 pl-4 text-base italic leading-relaxed text-slate-700 sm:text-lg dark:text-slate-300">
+            “{SITE_META.quote}”
+          </blockquote>
+
+          <!-- CTAs -->
+          <div class="mt-8 flex flex-wrap items-center gap-3">
+            <a
+              href={withBase('/docs/architecture')}
+              class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500"
+            >
+              <BookOpen class="h-4 w-4" />
+              Explore Architecture
+              <ArrowRight class="h-4 w-4" />
+            </a>
+            <a
+              href="#benchmarks"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:border-sky-500/60 hover:text-sky-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-sky-400/60 dark:hover:text-sky-300"
+            >
+              View Empirical Results
+            </a>
+            <a
+              href={SITE_META.repoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:border-slate-600"
+            >
+              <GitHubIcon class="h-4 w-4" />
+              Source Code
+            </a>
+          </div>
+
+          <!-- Academic Attribution & Creator Links -->
+          <div class="mt-8 space-y-3 rounded-xl border border-slate-200/90 bg-white/80 p-4 text-xs text-slate-600 backdrop-blur-xs dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+            <div class="grid gap-2 sm:grid-cols-2">
+              <div>
+                <span class="font-semibold text-slate-900 dark:text-white">Author:</span> {SITE_META.authorName}
+                <br />
+                <span class="font-semibold text-slate-900 dark:text-white">Institution:</span> {SITE_META.institution}
+              </div>
+              <div>
+                <span class="font-semibold text-slate-900 dark:text-white">Supervisors:</span> {SITE_META.supervisors.join(', ')}
+                <br />
+                <span class="font-semibold text-slate-900 dark:text-white">Tested On:</span> Unitree Go2 &amp; UBTech YanShee
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 border-t border-slate-200/70 pt-2.5 dark:border-slate-800/80">
+              <span class="font-semibold text-slate-500 dark:text-slate-400">Connect:</span>
+              <a
+                href={SITE_META.authorPortfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 font-medium text-sky-700 transition hover:bg-sky-500/20 dark:text-sky-300"
+              >
+                <Globe class="h-3 w-3" />
+                Portfolio
+              </a>
+              <a
+                href={SITE_META.authorLinkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 rounded-md border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 font-medium text-blue-700 transition hover:bg-blue-500/20 dark:text-blue-300"
+              >
+                <LinkedInIcon class="h-3 w-3" />
+                LinkedIn
+              </a>
+              <a
+                href={SITE_META.authorGithub}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-100 px-2.5 py-1 font-medium text-slate-700 transition hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <GitHubIcon class="h-3 w-3" />
+                GitHub
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emblem Visual (Adaptive Dark/Light with Electric-Blue Aura) -->
+        <div class="flex justify-center">
+          <div class="relative w-full max-w-sm">
+            <div class="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-sky-500/25 via-blue-500/20 to-cyan-400/20 blur-2xl"></div>
+            <div class="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white/90 p-5 shadow-xl backdrop-blur-md dark:border-sky-500/25 dark:bg-slate-900/85">
+              <div class="relative flex flex-col items-center justify-center rounded-2xl bg-[radial-gradient(circle_at_50%_48%,rgba(14,165,233,0.14)_0%,rgba(59,130,246,0.06)_52%,transparent_76%)] px-4 pt-4 pb-3 dark:bg-[radial-gradient(circle_at_50%_46%,rgba(14,165,233,0.32)_0%,rgba(37,99,235,0.15)_48%,rgba(15,23,42,0)_75%)]">
+                <span class="mb-2 bg-gradient-to-b from-slate-900 to-slate-600 bg-clip-text text-xl font-black tracking-[0.28em] text-transparent dark:from-white dark:to-sky-200">
+                  HOROS
+                </span>
+                <img
+                  src={withBase('/images/horos-emblem.png')}
+                  alt="HOROS Framework Shield Emblem"
+                  class="mx-auto h-auto max-h-60 w-auto object-contain drop-shadow-[0_12px_28px_rgba(14,165,233,0.35)]"
+                  width="320"
+                  height="335"
+                />
+                <span class="mt-3 text-center text-[10px] font-semibold tracking-[0.16em] text-slate-600 uppercase dark:text-sky-200/80">
+                  Adaptive Framework · Attack Mitigation · Safe Recovery
+                </span>
+              </div>
+              <div class="mt-3 flex items-center justify-between border-t border-slate-200/80 pt-3 text-[11px] font-mono text-slate-600 dark:border-slate-800 dark:text-slate-300">
+                <span>ROS 2 Humble · C++ / Python</span>
+                <span class="font-semibold text-emerald-700 dark:text-emerald-400">144 Sim · 22 Physical Runs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Highlights Strip -->
+      <div class="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        {
+          KEY_HIGHLIGHTS.map((item) => (
+            <div class="rounded-xl border border-slate-200/90 bg-white/90 p-4 shadow-xs transition hover:-translate-y-0.5 hover:border-sky-500/50 dark:border-slate-800 dark:bg-slate-900/80">
+              <p class="font-mono text-2xl font-extrabold text-sky-600 dark:text-sky-400">{item.metric}</p>
+              <h2 class="mt-1 text-sm font-bold text-slate-900 dark:text-white">{item.title}</h2>
+              <p class="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{item.detail}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 1: Why HOROS? -->
+  <section id="why-horos" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <div class="max-w-3xl">
+      <span class="text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+        The Big Picture
+      </span>
+      <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        Why HOROS? Safety Without Mission Paralysis
+      </h2>
+      <p class="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">
+        When an attacker injects wild velocity commands, steers toward walls, or floods DDS topics at 500 msg/s, existing robot defenses force an unacceptable tradeoff between freezing completely or crashing blindly.
+      </p>
+    </div>
+
+    <div class="mt-8 grid gap-6 lg:grid-cols-3">
+      {
+        COMPARISON_PARADIGMS.map((card) => {
+          const borderTone =
+            card.tone === 'emerald'
+              ? 'border-emerald-500/40 bg-emerald-50/40 dark:border-emerald-500/35 dark:bg-emerald-950/20'
+              : card.tone === 'amber'
+                ? 'border-amber-500/30 bg-amber-50/40 dark:border-amber-500/25 dark:bg-amber-950/15'
+                : 'border-rose-500/30 bg-rose-50/40 dark:border-rose-500/25 dark:bg-rose-950/15';
+
+          const pillTone =
+            card.tone === 'emerald'
+              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+              : card.tone === 'amber'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                : 'bg-rose-500/15 text-rose-700 dark:text-rose-300';
+
+          return (
+            <div class={`flex flex-col justify-between rounded-2xl border p-6 ${borderTone}`}>
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${pillTone}`}>{card.badge}</span>
+                  {card.tone === 'emerald' ? (
+                    <CircleCheck class="h-5 w-5 text-emerald-500" />
+                  ) : card.tone === 'amber' ? (
+                    <TriangleAlert class="h-5 w-5 text-amber-500" />
+                  ) : (
+                    <OctagonX class="h-5 w-5 text-rose-500" />
+                  )}
+                </div>
+                <h3 class="mt-4 text-lg font-bold text-slate-900 dark:text-white">{card.title}</h3>
+                <p class="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">{card.summary}</p>
+                <ul class="mt-4 space-y-2 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                  {card.points.map((pt) => (
+                    <li class="flex items-start gap-2">
+                      <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60"></span>
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div class="mt-6 border-t border-slate-200/70 pt-3 font-mono text-xs font-bold text-slate-800 dark:border-slate-800/70 dark:text-slate-200">
+                Outcome: {card.verdict}
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+  </section>
+
+  <!-- Section 2: Dual-Domain Architecture & Math -->
+  <section id="architecture" class="border-y border-slate-200/80 bg-slate-50/70 py-16 dark:border-slate-800/80 dark:bg-slate-900/35">
+    <div class="mx-auto max-w-7xl space-y-10 px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div class="max-w-3xl">
+          <span class="text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+            Core Architecture
+          </span>
+          <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Two Cooperative Safety Domains in Under 10 µs
+          </h2>
+          <p class="mt-3 text-base text-slate-600 dark:text-slate-300">
+            HOROS operates as a zero-copy C++ co-pilot gateway sitting between the navigation planner and motor actuators.
+          </p>
+        </div>
+        <a
+          href={withBase('/docs/architecture')}
+          class="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400"
+        >
+          Full Architecture Reference
+          <ArrowRight class="h-4 w-4" />
+        </a>
+      </div>
+
+      <InteractivePipeline />
+
+      <!-- Domain 1 & Domain 2 Deep Cards -->
+      <div class="grid gap-6 lg:grid-cols-2">
+        <!-- Domain 1: The Shield -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80">
+          <div class="flex items-center gap-2.5">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
+              <ShieldCheck class="h-5 w-5" />
+            </div>
+            <div>
+              <span class="font-mono text-xs font-semibold text-sky-600 dark:text-sky-400">DOMAIN 1</span>
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white">The Shield (Inline Mitigation Engine)</h3>
+            </div>
+          </div>
+
+          <ul class="mt-5 space-y-4 text-sm text-slate-600 dark:text-slate-300">
+            <li>
+              <strong class="text-slate-900 dark:text-white">Polymorphic Token-Bucket Shield:</strong> C++17 Strategy Pattern (<code class="font-mono text-xs">Static | Dynamic | Adaptive | Bypass</code>) with <code class="font-mono text-xs">O(1)</code> rate limiting (<code class="font-mono text-xs">15.0 / 50.0 tokens/s</code>) and state-gated service protection.
+            </li>
+            <li>
+              <strong class="text-slate-900 dark:text-white">Delay-Invariant Sampled-Data CBF (SD-CBF):</strong> Solves the exact discrete-time quadratic stopping inequality <span class="inline-block" set:html={eqStopping} /> relative to <code class="font-mono text-xs">d_crit</code> (<code class="font-mono text-xs">0.45 m</code> Go2, <code class="font-mono text-xs">0.25 m</code> YanShee):
+              <div class="my-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" set:html={eqSdCbf} />
+              Enforced at ingress so the robot halts strictly outside <code class="font-mono text-xs">d_impact</code> (<code class="font-mono text-xs">0.32 m</code> Go2 / <code class="font-mono text-xs">0.12 m</code> YanShee) even under detection delays.
+            </li>
+            <li>
+              <strong class="text-slate-900 dark:text-white">Dynamic Range-Rate &amp; ISO 3691-4 Disengagement:</strong> Tightens barrier margin <span class="inline-block" set:html={eqHeff} />, unlocks Priority 0 cliff-edge reverse extrication, and preserves in-place yaw turnaround.
+            </li>
+            <li>
+              <strong class="text-slate-900 dark:text-white">5-Tripwire Zero-Trust Sensory Ladder:</strong> Audits staleness, beam sanity, accel feasibility, max speed, and covariance—engaging dead-reckoned clearance decay <span class="inline-block" set:html={eqDeadReckon} /> when perception degrades.
+            </li>
+            <li>
+              <strong class="text-slate-900 dark:text-white">Step B_gyro Balance Guard &amp; U-HAL:</strong> Monitors 6-axis IMU tilt (<code class="font-mono text-xs">θ_crit = 16.0°</code>) and triggers 15° crouch-balance stance via <code class="font-mono text-xs">YansheeActuatorAdapter</code>.
+            </li>
+          </ul>
+        </div>
+
+        <!-- Domain 2: The Self-Healer -->
+        <div class="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <RefreshCw class="h-5 w-5" />
+              </div>
+              <div>
+                <span class="font-mono text-xs font-semibold text-amber-600 dark:text-amber-400">DOMAIN 2</span>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">The Self-Healer (Autonomous Recovery Engine)</h3>
+              </div>
+            </div>
+
+            <ul class="mt-5 space-y-4 text-sm text-slate-600 dark:text-slate-300">
+              <li>
+                <strong class="text-slate-900 dark:text-white">6-State FSM &amp; 5-Gate Protocol (G1–G5):</strong> Enforces <code class="font-mono text-xs">Φ = C1 ∧ C2 ∧ C3 ∧ C4 ∧ G5</code> covering quiescence, 10-tick clearance, postural balance, 64-bit anti-replay purge, and async SHA-256 <code class="font-mono text-xs">boot_manifest.json</code> attestation.
+              </li>
+              <li>
+                <strong class="text-slate-900 dark:text-white">Enforced Actuator Choke Point &amp; HOROS-Sec:</strong> Severs public <code class="font-mono text-xs">/cmd_vel</code> from motors; verified commands exit solely on private <code class="font-mono text-xs">/&#123;robot&#125;/safe_cmd_vel_sec</code> signed with HMAC-SHA256 + SROS2 enclaves.
+              </li>
+              <li>
+                <strong class="text-slate-900 dark:text-white">Asymmetric Capability Cap &amp; Hermite S-Curve:</strong> Collapses ceilings in <code class="font-mono text-xs">&lt; 2 ms</code> on hazard onset, while restoring speed along a zero-jerk cubic Hermite polynomial (<code class="font-mono text-xs">3τ² - 2τ³</code>) timed via <code class="font-mono text-xs">steady_clock</code>.
+              </li>
+              <li>
+                <strong class="text-slate-900 dark:text-white">Adaptive Deployment (<code class="font-mono text-xs">composed:=auto</code>):</strong> Runs 2 decoupled PIDs on Go2 (ASIL-D FFI) and a single zero-copy container (<code class="font-mono text-xs">-42.0%</code> RAM, <code class="font-mono text-xs">61.80 MB</code>) on YanShee Raspberry Pi 3B+.
+              </li>
+            </ul>
+          </div>
+
+          <div class="mt-6 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+            <strong>Empirical Recovery &amp; Composition:</strong> Averaged <code class="font-mono font-bold">1.98 ± 1.28 s</code> (Go2) and <code class="font-mono font-bold">1.19 ± 1.03 s</code> (YanShee) with <strong>0 manual resets</strong>, while intra-process composition cut RAM by <strong>42.0%</strong> across <code class="font-mono font-bold">N = 376</code> trials.
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive SD-CBF Playground -->
+      <SdCbfSimulator />
+    </div>
+  </section>
+
+  <!-- Section 3: Cross-Morphology Hardware Testbed -->
+  <section id="testbed" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <div class="max-w-3xl">
+      <span class="text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+        Physical Validation
+      </span>
+      <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        From 4 Legs to 2 Legs: Cross-Morphology Testbed
+      </h2>
+      <p class="mt-3 text-base text-slate-600 dark:text-slate-300">
+        Validated across two drastically different physical morphologies and compute envelopes—from an NVIDIA Jetson Orin NX quadruped to a 1 GB RAM Raspberry Pi 3 biped humanoid.
+      </p>
+    </div>
+
+    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+      {
+        HARDWARE_TESTBEDS.map((bot) => (
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/80">
+            <div class="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <div>
+                <span class="font-mono text-xs font-semibold text-sky-600 dark:text-sky-400">{bot.tag}</span>
+                <h3 class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{bot.name}</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{bot.subtitle}</p>
+              </div>
+              <Cpu class="h-6 w-6 text-slate-400" />
+            </div>
+
+            <dl class="mt-4 space-y-2.5 text-xs sm:text-sm">
+              <div class="flex flex-col sm:flex-row sm:justify-between">
+                <dt class="font-semibold text-slate-500 dark:text-slate-400">Onboard Compute</dt>
+                <dd class="font-mono text-slate-900 dark:text-slate-100">{bot.compute}</dd>
+              </div>
+              <div class="flex flex-col sm:flex-row sm:justify-between">
+                <dt class="font-semibold text-slate-500 dark:text-slate-400">Sensors</dt>
+                <dd class="text-slate-800 dark:text-slate-200">{bot.sensors}</dd>
+              </div>
+              <div class="flex flex-col sm:flex-row sm:justify-between">
+                <dt class="font-semibold text-slate-500 dark:text-slate-400">Barrier Boundaries</dt>
+                <dd class="font-mono text-sky-700 dark:text-sky-300">{bot.criticalDist}</dd>
+              </div>
+            </dl>
+
+            <p class="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600 dark:bg-slate-950/70 dark:text-slate-300">
+              <strong class="text-slate-800 dark:text-slate-100">Engineering Challenge:</strong> {bot.challenge}
+            </p>
+
+            <div class="mt-4 grid grid-cols-2 gap-3">
+              {bot.metrics.map((m) => (
+                <div class="rounded-lg border border-slate-200/80 p-2.5 dark:border-slate-800">
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">{m.label}</span>
+                  <span class="mt-0.5 block font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{m.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Section 4: 13 Threat Vectors -->
+  <section id="threat-vectors" class="border-y border-slate-200/80 bg-slate-50/70 py-16 dark:border-slate-800/80 dark:bg-slate-900/35">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div class="max-w-3xl">
+          <span class="text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+            Adversarial Evaluation
+          </span>
+          <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            The 13 Canonical Cyber Threat Vectors
+          </h2>
+          <p class="mt-3 text-base text-slate-600 dark:text-slate-300">
+            Organized across three progressive adversarial tiers and aligned with MITRE ATT&amp;CK for ICS / Mobile Robotics—from flooding DoS to ZMP toppling resonance.
+          </p>
+        </div>
+        <a
+          href={withBase('/docs/threat-vectors')}
+          class="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400"
+        >
+          Full Threat Matrix
+          <ArrowRight class="h-4 w-4" />
+        </a>
+      </div>
+
+      <ThreatMatrix compact={true} />
+    </div>
+  </section>
+
+  <!-- Section 5: Empirical Benchmarks -->
+  <section id="benchmarks" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+    <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div class="max-w-3xl">
+        <span class="text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+          Empirical Results
+        </span>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          Simulation &amp; Real-Hardware Benchmarks
+        </h2>
+        <p class="mt-3 text-base text-slate-600 dark:text-slate-300">
+          144 systematic Gazebo trials and 22 physical UBTech YanShee experiments prove safety, balance preservation, and microsecond overhead.
+        </p>
+      </div>
+      <a
+        href={withBase('/docs/benchmarks')}
+        class="inline-flex items-center gap-1.5 text-sm font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400"
+      >
+        Full Benchmark Report
+        <ArrowRight class="h-4 w-4" />
+      </a>
+    </div>
+
+    <BenchmarkVisualizer />
+  </section>
+
+  <!-- Section 6: Quickstart & Citation -->
+  <section id="quickstart" class="border-t border-slate-200/80 bg-slate-50/70 py-16 dark:border-slate-800/80 dark:bg-slate-900/35">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid items-start gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <!-- 3-Step Quickstart -->
+        <div class="min-w-0 space-y-6">
+          <div>
+            <span class="text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+              Quickstart
+            </span>
+            <h2 class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              Run HOROS in 3 Easy Steps
+            </h2>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              Built for ROS 2 Humble on Ubuntu 22.04 LTS. Launch Gazebo and test live cyberattacks in minutes.
+            </p>
+          </div>
+
+          <div class="space-y-5">
+            {
+              QUICKSTART_STEPS.map((s) => (
+                <div class="min-w-0 rounded-2xl border border-slate-200/90 bg-white/90 p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900/75">
+                  <div class="flex items-center gap-2.5">
+                    <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-sky-600 font-mono text-xs font-bold text-white">
+                      {s.step}
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">{s.title}</h3>
+                  </div>
+                  <p class="mt-2 mb-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{s.description}</p>
+                  <CodeBlock code={s.code} label={`Step ${s.step} · ROS 2 Humble`} />
+                </div>
+              ))
+            }
+          </div>
+        </div>
+
+        <!-- Academic Origin & BibTeX -->
+        <div class="min-w-0 space-y-6 lg:sticky lg:top-24">
+          <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/85">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 text-xs font-bold tracking-wider text-amber-600 uppercase dark:text-amber-400">
+                <GraduationCap class="h-4 w-4 shrink-0" />
+                Academic Origin &amp; Citation
+              </div>
+              <span class="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                GIU Cairo · 2026
+              </span>
+            </div>
+            <h3 class="mt-3 text-xl font-bold text-slate-900 dark:text-white">
+              Bachelor of Science Thesis
+            </h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              Originally conceived and developed at the <strong class="text-slate-900 dark:text-white">{SITE_META.institution}</strong> ({SITE_META.faculty}) under the supervision of <strong class="text-slate-900 dark:text-white">{SITE_META.supervisors.join(' and ')}</strong>.
+            </p>
+
+            <div class="mt-4">
+              <CodeBlock code={BIBTEX_CITATION} label="citation.bib" lang="bibtex" wrap={true} />
+            </div>
+          </div>
+
+          <div class="min-w-0 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900/85">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 text-xs font-bold tracking-wider text-sky-600 uppercase dark:text-sky-400">
+                <Scale class="h-4 w-4 shrink-0" />
+                License &amp; Intellectual Property
+              </div>
+              <span class="rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-sky-700 dark:text-sky-300">
+                Apache 2.0
+              </span>
+            </div>
+            <p class="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+              Copyright © 2026–present <strong class="text-slate-900 dark:text-white">{SITE_META.authorName}</strong>. Released under the <strong class="text-slate-900 dark:text-white">Apache License 2.0</strong>. While born in the academic context of GIU Cairo, all intellectual property, architectural design, and ongoing code contributions are solely and exclusively owned by the author.
+            </p>
+            <div class="mt-5 flex flex-wrap gap-3">
+              <a
+                href={SITE_META.repoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 dark:bg-sky-600 dark:hover:bg-sky-500"
+              >
+                <GitHubIcon class="h-3.5 w-3.5" />
+                horos_framework
+              </a>
+              <a
+                href={withBase('/docs')}
+                class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-sky-500 dark:border-slate-700 dark:text-slate-200"
+              >
+                Browse Full Docs
+                <ArrowRight class="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- About the Creator Spotlight -->
+      <div class="mt-12 rounded-2xl border border-sky-500/25 bg-gradient-to-r from-white via-sky-50/40 to-emerald-50/40 p-6 shadow-xs sm:p-8 dark:border-sky-500/20 dark:from-slate-900/90 dark:via-slate-900/80 dark:to-sky-950/30">
+        <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+          <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-0.5 text-[11px] font-bold tracking-wider text-sky-700 uppercase dark:text-sky-300">
+              <User class="h-3.5 w-3.5" />
+              About the Creator
+            </div>
+            <h3 class="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+              {SITE_META.authorName}
+            </h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              {SITE_META.authorBio}
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2 text-[11px] font-medium">
+              <span class="rounded-md border border-slate-200 bg-white/80 px-2.5 py-0.5 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
+                Cybersecurity Major · GIU
+              </span>
+              <span class="rounded-md border border-slate-200 bg-white/80 px-2.5 py-0.5 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
+                Software &amp; Systems Engineering
+              </span>
+              <span class="rounded-md border border-slate-200 bg-white/80 px-2.5 py-0.5 text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
+                Tech Enthusiast
+              </span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <a
+              href={SITE_META.authorPortfolio}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-sky-500"
+            >
+              <Globe class="h-4 w-4" />
+              Personal Portfolio
+              <ExternalLink class="h-3.5 w-3.5 opacity-80" />
+            </a>
+            <a
+              href={SITE_META.authorLinkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 transition hover:border-blue-500 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-blue-400 dark:hover:text-blue-300"
+            >
+              <LinkedInIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              LinkedIn
+            </a>
+            <a
+              href={SITE_META.authorGithub}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 transition hover:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-500"
+            >
+              <GitHubIcon class="h-4 w-4" />
+              GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
